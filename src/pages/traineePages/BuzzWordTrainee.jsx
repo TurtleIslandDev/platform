@@ -12,7 +12,6 @@ const BuzzWordTrainee = () => {
 
 
   const [gridData, setGridData] = useState({});
-  console.log("Buzzword working!")
 
   // const gridItems = Array.from({ length: 25 }, (_, index) => {
       
