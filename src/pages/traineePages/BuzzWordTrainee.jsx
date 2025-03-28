@@ -57,6 +57,8 @@ const BuzzWordTrainee = () => {
   // State to track clicked items
   const [clickedData, setClickedData] = useState([]);
   const [activeStep, setActiveStep] = useState(0);
+  const buzz_id = useParams().id;      
+
   const handleNext = (e) => {
     setActiveStep((prevActiveStep) => {
       return prevActiveStep + 1;
@@ -70,7 +72,7 @@ const BuzzWordTrainee = () => {
         Authorization : `Bearer ${token}`
       },
       body: JSON.stringify({
-        buzzword_id: gridData.buzz_id,
+        buzzword_id: buzz_id,
         submission: clickedData,
       }),
     });
@@ -110,7 +112,6 @@ const BuzzWordTrainee = () => {
   };
 
   const {token} = useSelector((state) => state.user);
-  const buzz_id = useParams().id;      
 
 
   useEffect(() => {
