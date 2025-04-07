@@ -74,6 +74,9 @@ const BpoNavigation = lazy(() => import("./pages/navigation/BpoNavigation"));
 const AdminNavigation = lazy(() =>
   import("./pages/navigation/AdminNavigation")
 );
+const ContactsDashboard = lazy(() =>
+  import("./pages/adminPages/contactsDashboard/contacts-dashboard")
+);
 const ThreeCircleLayout = lazy(() =>
   import("./pages/navigation/ThreeCircleLayout")
 );
@@ -158,6 +161,10 @@ function App() {
             <Route
               path="/admin-navigation/upload-data"
               element={<UploadDataPage />}
+            />
+            <Route 
+              path="/admin-navigation/data/contacts-dashboard"
+              element={<ContactsDashboard />}
             />
             <Route path="bpo-navigation" element={<BpoNavigation />} />
             <Route

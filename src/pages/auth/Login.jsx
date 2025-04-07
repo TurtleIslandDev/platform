@@ -87,9 +87,10 @@ const Login = () => {
   }, []);
   return (
     <div
-      className="h-[1000px] w-full  flex items-center justify-center relative"
+      className=" w-full  flex items-center justify-center relative"
       style={{
         backgroundImage: `url(${second})`,
+        height: "100vh",
         backgroundRepeat: "no-repeat",
         backgroundSize: "cover",
         backgroundPosition: "center",

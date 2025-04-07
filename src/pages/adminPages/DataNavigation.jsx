@@ -220,13 +220,13 @@ const DataNavigation = () => {
         </div>
         {/* seventh */}
         <div
-          //   onMouseOver={(e) => handleMouseOver(e, "seventh")}
-          //   onMouseLeave={(e) => handleMouseOut(e, "seventh")}
-          //   onClick={() => {
-          //     navigate(
-          //       "/agent-trainee-navigation/trainee-interaction-guide-fasttrack"
-          //     );
-          //   }}
+            onMouseOver={(e) => handleMouseOver(e, "seventh")}
+            onMouseLeave={(e) => handleMouseOut(e, "seventh")}
+            onClick={() => {
+              navigate(
+                "/admin-navigation/data/contacts-dashboard"
+              );
+            }}
           className=" flex items-center justify-center rounded-full border-2 border-dashed border-[#D9D9D9] w-44 h-44 absolute -left-[185px] -top-10  "
         >
           <div
@@ -237,7 +237,7 @@ const DataNavigation = () => {
             <div className="relative text-white">
               {hoverStates.seventh ? (
                 <p className="uppercase font-bold text-xl text-center">
-                  interaction guide
+                  dashboard
                 </p>
               ) : (
                 <div className="transform scale-150">
