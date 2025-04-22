@@ -26,8 +26,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/web/platform
-            git pull origin production
-            sudo chown -R ubuntu:ubuntu ~/web/platform/dist
+            git pull origin production       
             npm install
             npm run build
             sudo nginx -t && sudo systemctl reload nginx
