@@ -53,7 +53,7 @@ const TABLE_ROWS = [
     date: "04/10/21",
   },
 ];
-const Rooster = () => {
+const Roster = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [open, setOpen] = useState(false);
 
@@ -63,7 +63,6 @@ const Rooster = () => {
   const { fetchData, loading } = useFetch();
   useEffect(() => {
     fetchData("/guide_auth/getAllUsers", undefined, (res) => {
-      console.log(res);
       setAllUsers(res?.data);
     });
   }, []);
@@ -115,7 +114,8 @@ const Rooster = () => {
               </tr>
             </thead>
             <tbody>
-              {allUsers.map((user, index) => {
+              {allUsers?.map((user, index) => {
+                if (!user) return null;
                 const isLast = index === allUsers.length - 1;
                 const classes = isLast
                   ? "p-4"
@@ -208,4 +208,4 @@ const Rooster = () => {
   );
 };
 
-export default Rooster;
+export default Roster;

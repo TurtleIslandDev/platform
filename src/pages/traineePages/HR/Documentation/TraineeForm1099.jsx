@@ -14,7 +14,6 @@ const TraineeForm1099 = () => {
   } = useForm();
 
   const onSubmit = async (data) => {
-    console.log(data);
     try {
       const existingPdfBytes = await fetch("/f1099msc.pdf").then((res) =>
         res.arrayBuffer()

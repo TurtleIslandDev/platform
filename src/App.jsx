@@ -27,7 +27,7 @@ import FormW9 from "./components/googleDriveForms/FormW9";
 import HrNavigationPage from "./pages/traineePages/HR/HrNavigationPage";
 import TraineeForm1099 from "./pages/traineePages/HR/Documentation/TraineeForm1099";
 import TraineeFormW9 from "./pages/traineePages/HR/Documentation/TraineeFormw9";
-import Rooster from "./pages/adminPages/Rooster";
+import Roster from "./pages/adminPages/Roster";
 import AvailabilityPage from "./pages/traineePages/HR/AvailabilityPage";
 import UploadIdentification from "./pages/traineePages/HR/Documentation/UploadIdentification";
 import DocumentationNavigationPage from "./pages/traineePages/HR/Documentation/DocumentationNavigationPage";
@@ -125,7 +125,7 @@ function App() {
             <Route path="/" element={<Login />} />
             <Route path="/support" element={<SupportPage />} />
             <Route path="/admin-navigation/add-user" element={<AddUser />} />
-            <Route path="/admin-navigation/rooster" element={<Rooster />} />
+            <Route path="/admin-navigation/roster" element={<Roster />} />
             <Route
               path="/admin-navigation/export-data"
               element={<ExportDataPage />}

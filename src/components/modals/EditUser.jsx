@@ -32,7 +32,7 @@ export function EditUser({ open, setOpen }) {
   } = useForm({
     defaultValues: {
       password: "",
-      role: toBeEdited.role,
+      role: toBeEdited?.role,
       company: toBeEdited?.newFields?.company,
       address: toBeEdited?.newFields?.address,
       phone: toBeEdited?.newFields?.phone,
@@ -73,7 +73,6 @@ export function EditUser({ open, setOpen }) {
     }
     // Add newFields to the original object
     data.newFields = newFields;
-    console.log(data);
     data.username = toBeEdited?.username;
     try {
       if (token?.length) {

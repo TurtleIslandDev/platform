@@ -288,7 +288,6 @@ const TraineeFormW9 = () => {
           .then((result) => {
             result = JSON.parse(result);
             alert(result.message);
-            console.log(result);
           })
           .catch((error) => console.error(error));
       } catch (error) {

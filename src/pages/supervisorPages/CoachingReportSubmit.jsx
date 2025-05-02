@@ -168,7 +168,6 @@ const CoachingReportAccept = () => {
           delete data[key];
         }
       });
-      console.log(data);
     } catch (error) {
       // add error handling here
       console.log(error);
