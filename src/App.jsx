@@ -37,6 +37,9 @@ import AgentLearningNavigation from "./pages/agentPages/Learning/AgentLearningNa
 import TraineeLearningNavigation from "./pages/traineePages/Learning/TraineeLearningNavigation";
 import AgentCompensationNavigation from "./pages/agentPages/Compensation/AgentCompensationNavigation";
 import AgentCertificationNavigation from "./pages/agentPages/Certification/AgentCertificationNavigation";
+
+import UploadLeadFile from "./pages/supervisorPages/uploadLeadFile";
+
 const BuzzWordTrainee = lazy(() =>
   import("./pages/traineePages/BuzzWordTrainee")
 );
@@ -140,6 +143,10 @@ function App() {
               element={<BuzzWord />}
             />
             <Route
+              path="/admin-navigation/upload-lead-file"
+              element={<UploadLeadFile />}
+            />
+            <Route
               path="/qc-and-supervisor-navigation/buzzword-supervisor"
               element={<BuzzWord />}
             />
@@ -202,6 +209,10 @@ function App() {
             <Route
               path="/qc-and-supervisor-navigation/upload-data"
               element={<UploadDataPage />}
+            />
+            <Route
+              path="/qc-and-supervisor-navigation/upload-lead-file"
+              element={<UploadLeadFile />}
             />
             <Route
               path="/qc-and-supervisor-navigation/add-user"

@@ -258,7 +258,7 @@ const AdminNavigation = () => {
         </div>
         {/* seventh */}
         <div
-          onClick={() => navigate("upload-data")}
+          onClick={() => navigate("upload-lead-file")}
           onMouseOver={(e) => handleMouseOver(e, "web")}
           onMouseLeave={(e) => handleMouseOut(e, "web")}
           className=" flex items-center justify-center rounded-full border-2 border-dashed border-[#D9D9D9] w-44 h-44 absolute -left-[185px] -top-10  "
