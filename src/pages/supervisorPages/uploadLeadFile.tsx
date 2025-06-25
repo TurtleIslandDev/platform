@@ -32,6 +32,7 @@ const PREDEFINED_COLUMNS = [
   { id: "phone_code", label: "Phone Code", required: false },
   { id: "postal_code", label: "Postal Code", required: false },
   { id: "province", label: "Province", required: false },
+  { id: "source_id", label: "Source ID", required: false },
   { id: "security_phrase", label: "Security Phrase", required: false },
   { id: "state", label: "State", required: false },
   { id: "title", label: "Title", required: false },
