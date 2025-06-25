@@ -33,7 +33,6 @@ const PREDEFINED_COLUMNS = [
   { id: "postal_code", label: "Postal Code", required: false },
   { id: "province", label: "Province", required: false },
   { id: "security_phrase", label: "Security Phrase", required: false },
-  { id: "source_id", label: "Source ID", required: false },
   { id: "state", label: "State", required: false },
   { id: "title", label: "Title", required: false },
   { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
@@ -56,38 +55,11 @@ const UploadLeadFile = () => {
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({})
   const [searchTerm, setSearchTerm] = useState("")
   const [listId, setListId] = useState("")
-  const [sourceId, setSourceId] = useState("")
+  
   const [isUploading, setIsUploading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const { token } = useSelector((state: any) => state.user);
 
-
-
-  // data to be fetched from the backend
-  const [sourceOptions, setSourceOptions] = useState<{ id: string; name: string }[]>([])
-
-  // fetch source options from the backend
-  useEffect(() => {
-    const fetchSourceOptions = async () => {
-      const response = await fetch(`${UPLOAD_URL}/guides/fetch_sources`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      const data = await response.json()
-
-      setSourceOptions(data.data)
-    }
-
-    fetchSourceOptions()
-  }, [])
-
-  
-  
-  // New state for source selection/creation
-  const [sourceMode, setSourceMode] = useState<"select" | "create">("select")
-  const [newSourceName, setNewSourceName] = useState("")
-  const [newSourceDescription, setNewSourceDescription] = useState("")
 
   // Filter predefined columns based on search term
   const filteredColumns = PREDEFINED_COLUMNS.filter(
@@ -166,12 +138,6 @@ const UploadLeadFile = () => {
 
     if (!listId) newErrors.push("Please select a List ID")
     
-    // Validate source based on mode
-    if (sourceMode === "select") {
-      if (!sourceId) newErrors.push("Please select a Source ID")
-    } else {
-      if (!newSourceName.trim()) newErrors.push("Please enter a new source name")
-    }
     
     if (!csvFile) newErrors.push("Please upload a CSV file")
 
@@ -179,37 +145,7 @@ const UploadLeadFile = () => {
     return newErrors.length === 0
   }
 
-  // Handle new source creation
-  const handleCreateNewSource = async (name: string, description: string) => {
-    try {
-      const newSource = {
-        sourceName: name,
-        description: description
-      }
-      
 
-      const response = await fetch(`${UPLOAD_URL}/guides/create_source`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newSource),
-      })
-      
-      const data = await response.json()
-      
-      if (data.status == "success") {
-        return newSource
-      } else {
-        throw new Error(data.message)
-      }
-
-    } catch (error) {
-      console.error("Failed to create source:", error)
-      throw error
-    }
-  }
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -218,21 +154,11 @@ const UploadLeadFile = () => {
     setIsUploading(true)
 
     try {
-      let finalSourceName = sourceId
-      
-      // If creating a new source, create it first
-      if (sourceMode === "create") {
-        const newSource = await handleCreateNewSource(newSourceName, newSourceDescription)
-
-        finalSourceName = newSource.sourceName
-      }
-
       // Prepare the data to send to server
       const payload = {
         file: csvFile,
         mappings: fieldMappings,
-        list: listId,
-        source: finalSourceName,
+        list: listId,        
         headers: csvHeaders,
         data: csvData,
       }
@@ -265,11 +191,8 @@ const UploadLeadFile = () => {
       setCsvData([])
       setFieldMappings({})
       setListId("")
-      setSourceId("")
       setErrors([])
-      setSourceMode("select")
-      setNewSourceName("")
-      setNewSourceDescription("")
+      
 
     } catch (error) {
       console.error("Upload failed:", error)
@@ -319,7 +242,7 @@ const UploadLeadFile = () => {
           <Card>
             <CardHeader>
               <CardTitle>Configuration</CardTitle>
-              <CardDescription>Set the list ID, source ID, and template name for this upload</CardDescription>
+              <CardDescription>Set the list ID for this upload</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -331,62 +254,7 @@ const UploadLeadFile = () => {
                   onChange={(e) => setListId(e.target.value)}
                 />
               </div>
-
-              <div>
-                <Label htmlFor="source-id">Source ID *</Label>
-                <Tabs value={sourceMode} onValueChange={(value) => setSourceMode(value as "select" | "create")} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="select" className="flex items-center gap-2">
-                      <List className="h-4 w-4" />
-                      Select Existing
-                    </TabsTrigger>
-                    <TabsTrigger value="create" className="flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Create New
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="select" className="mt-4">
-                    <div className="space-y-2">
-                      <p className="text-sm text-muted-foreground">Choose from existing sources in your system</p>
-                      <Select value={sourceId} onValueChange={setSourceId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sourceOptions.map((option) => (
-                            <SelectItem key={option.id} value={option.id}>
-                              {option.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="create" className="mt-4 space-y-4">
-                    <p className="text-sm text-muted-foreground">Create a new source for this upload</p>
-                    <div>
-                      <Label htmlFor="new-source-name">Source Name *</Label>
-                      <Input
-                        id="new-source-name"
-                        placeholder="Enter source name..."
-                        value={newSourceName}
-                        onChange={(e) => setNewSourceName(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="new-source-description">Description (Optional)</Label>
-                      <Input
-                        id="new-source-description"
-                        placeholder="Enter source description..."
-                        value={newSourceDescription}
-                        onChange={(e) => setNewSourceDescription(e.target.value)}
-                      />
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
+              
             </CardContent>
           </Card>
 
