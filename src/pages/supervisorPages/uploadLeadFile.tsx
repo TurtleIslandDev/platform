@@ -7,6 +7,7 @@ import { Badge } from "../../components/ui/badge"
 import { Alert, AlertDescription } from "../../components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { Checkbox } from "../../components/ui/checkbox"
 import { Upload, Search, CheckCircle, AlertCircle, X, Plus, List } from "lucide-react"
 import React from "react";
 import { useSelector } from "react-redux";
@@ -56,6 +57,8 @@ const UploadLeadFile = () => {
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({})
   const [searchTerm, setSearchTerm] = useState("")
   const [listId, setListId] = useState("")
+  const [sourceId, setSourceId] = useState("")
+  const [skipScrubbing, setSkipScrubbing] = useState(false)
   
   const [isUploading, setIsUploading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
@@ -139,7 +142,6 @@ const UploadLeadFile = () => {
 
     if (!listId) newErrors.push("Please select a List ID")
     
-    
     if (!csvFile) newErrors.push("Please upload a CSV file")
 
     setErrors(newErrors)
@@ -159,7 +161,9 @@ const UploadLeadFile = () => {
       const payload = {
         file: csvFile,
         mappings: fieldMappings,
-        list: listId,        
+        list: listId,
+        source_id: sourceId,
+        skip_scrubbing: skipScrubbing,
         headers: csvHeaders,
         data: csvData,
       }
@@ -189,6 +193,8 @@ const UploadLeadFile = () => {
       setCsvData([])
       setFieldMappings({})
       setListId("")
+      setSourceId("")
+      setSkipScrubbing(false)
       setErrors([])
       
 
@@ -240,7 +246,7 @@ const UploadLeadFile = () => {
           <Card>
             <CardHeader>
               <CardTitle>Configuration</CardTitle>
-              <CardDescription>Set the list ID for this upload</CardDescription>
+              <CardDescription>Set the list ID and source ID for this upload</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -253,6 +259,24 @@ const UploadLeadFile = () => {
                 />
               </div>
               
+              <div>
+                <Label htmlFor="source-id">Source ID</Label>
+                <Input
+                  id="source-id"
+                  placeholder="Enter source ID..."
+                  value={sourceId}
+                  onChange={(e) => setSourceId(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="skip-scrubbing"
+                  checked={skipScrubbing}
+                  onCheckedChange={(checked) => setSkipScrubbing(checked as boolean)}
+                />
+                <Label htmlFor="skip-scrubbing">Skip Scrubbing</Label>
+              </div>
             </CardContent>
           </Card>
 
