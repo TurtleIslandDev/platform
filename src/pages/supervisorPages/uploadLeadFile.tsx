@@ -163,10 +163,7 @@ const UploadLeadFile = () => {
         headers: csvHeaders,
         data: csvData,
       }
-
-      // Simulate API call
-      console.log("Sending to server:", payload)
-
+      
 
       const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
         method: "POST",
@@ -180,14 +177,14 @@ const UploadLeadFile = () => {
       const responseData = await response.json()
       
       if (responseData.status === "success") {
-        const { success_count, original_count } = responseData.data
-        alert(`Upload completed successfully!\n\nSuccessfully uploaded: ${success_count} leads\nOriginal count: ${original_count} leads`)
+        const { success_count, original_count, blacklist_count } = responseData.data
+        alert(`Upload completed successfully!\n\nSuccessfully uploaded: ${success_count} leads\nOriginal count: ${original_count} leads\nBlacklisted: ${blacklist_count} leads`)
       } else {
         throw new Error(responseData.message || "Upload failed")
       }
 
       // Reset form
-      setCsvFile(null)
+      setCsvFile(null)      
       setCsvHeaders([])
       setCsvData([])
       setFieldMappings({})
@@ -315,6 +312,7 @@ const UploadLeadFile = () => {
                       const mappedCsvField = Object.keys(fieldMappings).find(
                         (csvField) => fieldMappings[csvField] === predefinedField.id,
                       )
+                    
 
                       // Filter CSV headers based on search term
                       const filteredCsvHeaders = csvHeaders.filter((header) =>
