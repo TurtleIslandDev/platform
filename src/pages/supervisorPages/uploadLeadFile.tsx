@@ -59,6 +59,7 @@ const UploadLeadFile = () => {
   const [listId, setListId] = useState("")
   const [sourceId, setSourceId] = useState("")
   const [skipScrubbing, setSkipScrubbing] = useState(false)
+  const [downloadFile, setDownloadFile] = useState(false)
   
   const [isUploading, setIsUploading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
@@ -166,6 +167,7 @@ const UploadLeadFile = () => {
         skip_scrubbing: skipScrubbing,
         headers: csvHeaders,
         data: csvData,
+        download_file: downloadFile,
       }
       
 
@@ -178,14 +180,32 @@ const UploadLeadFile = () => {
         body: JSON.stringify(payload),
       })
 
-      const responseData = await response.json()
-      
-      if (responseData.status === "success") {
-        const { success_count, original_count, blacklist_count } = responseData.data
-        alert(`Upload completed successfully!\n\nSuccessfully uploaded: ${success_count} leads\nOriginal count: ${original_count} leads\nBlacklisted: ${blacklist_count} leads`)
+      let responseData: any = null
+
+      if (response.ok) {
+        if (!downloadFile) {
+          responseData = await response.json()
+
+          if (responseData.status === "success") {
+            const { success_count, original_count, blacklist_count } = responseData.data
+            alert(`Upload completed successfully!\n\nSuccessfully uploaded: ${success_count} leads\nOriginal count: ${original_count} leads\nBlacklisted: ${blacklist_count} leads`)
+          } else {
+            throw new Error(responseData.message || "Upload failed")
+          }
+        } else {
+          responseData = await response.blob()
+
+          const url = window.URL.createObjectURL(responseData)
+          const a = document.createElement("a")
+          a.href = url
+          a.download = `leads_${new Date().toISOString().split("T")[0]}.csv`
+          a.click()
+          window.URL.revokeObjectURL(url)
+        }
       } else {
-        throw new Error(responseData.message || "Upload failed")
-      }
+        throw new Error("Upload failed")
+      }      
+      
 
       // Reset form
       setCsvFile(null)      
@@ -249,6 +269,7 @@ const UploadLeadFile = () => {
               <CardDescription>Set the list ID and source ID for this upload</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+LIst              
               <div>
                 <Label htmlFor="list-id">List ID *</Label>
                 <Input
@@ -277,6 +298,15 @@ const UploadLeadFile = () => {
                 />
                 <Label htmlFor="skip-scrubbing">Skip Scrubbing</Label>
               </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="download-file"
+                  checked={downloadFile}
+                  onCheckedChange={(checked) => setDownloadFile(checked as boolean)}
+                />
+                <Label htmlFor="download-file">Download File</Label>
+              </div>
             </CardContent>
           </Card>
 
@@ -296,7 +326,7 @@ const UploadLeadFile = () => {
 
           {/* Submit Button */}
           <Button onClick={handleSubmit} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
-            {isUploading ? "Uploading..." : "Upload & Process CSV"}
+            {isUploading ? "Uploading..." : downloadFile ? "Process & Download File" : "Upload & Process CSV"}
           </Button>
         </div>
 
