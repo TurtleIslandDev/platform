@@ -141,7 +141,7 @@ const UploadLeadFile = () => {
       newErrors.push(`Missing required fields: ${missingRequired.map((f) => f.label).join(", ")}`)
     }
 
-    if (!listId) newErrors.push("Please select a List ID")
+    if (!listId && !downloadFile) newErrors.push("Please select a List ID")
     
     if (!csvFile) newErrors.push("Please upload a CSV file")
 
