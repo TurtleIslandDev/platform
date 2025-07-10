@@ -223,6 +223,9 @@ const UploadLeadFile = () => {
       setErrors(["Upload failed. Please try again."])
     } finally {
       setIsUploading(false)
+
+      // refresh the page
+      window.location.reload()
     }
   }
 
