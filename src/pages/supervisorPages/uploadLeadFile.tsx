@@ -169,16 +169,33 @@ const UploadLeadFile = () => {
         data: csvData,
         download_file: downloadFile,
       }
+
+      console.log(payload)
       
+
+      // Use FormData to send file + payload
+      const formData = new FormData();
+      if (csvFile) {
+        formData.append("file", csvFile);
+      }
+      formData.append("mappings", JSON.stringify(fieldMappings));
+      formData.append("list", listId || "");
+      formData.append("source_id", sourceId || "");
+      if (skipScrubbing) {
+        formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
+      }
+      if (downloadFile) {
+        formData.append("download_file", JSON.stringify(downloadFile));
+      }
 
       const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          // Do NOT set Content-Type header for FormData, browser will set it including boundary
         },
-        body: JSON.stringify(payload),
-      })
+        body: formData,
+      });
 
       let responseData: any = null
 
@@ -193,6 +210,7 @@ const UploadLeadFile = () => {
             throw new Error(responseData.message || "Upload failed")
           }
         } else {
+
           responseData = await response.blob()
 
           const url = window.URL.createObjectURL(responseData)
@@ -203,19 +221,19 @@ const UploadLeadFile = () => {
           window.URL.revokeObjectURL(url)
         }
       } else {
-        throw new Error("Upload failed")
+        throw new Error(response.statusText || "Upload failed")
       }      
       
 
-      // Reset form
-      setCsvFile(null)      
-      setCsvHeaders([])
-      setCsvData([])
-      setFieldMappings({})
-      setListId("")
-      setSourceId("")
-      setSkipScrubbing(false)
-      setErrors([])
+      // // Reset form
+      // setCsvFile(null)      
+      // setCsvHeaders([])
+      // setCsvData([])
+      // setFieldMappings({})
+      // setListId("")
+      // setSourceId("")
+      // setSkipScrubbing(false)
+      // setErrors([])
       
 
     } catch (error) {
@@ -225,7 +243,7 @@ const UploadLeadFile = () => {
       setIsUploading(false)
 
       // refresh the page
-      window.location.reload()
+      // window.location.reload()
     }
   }
 
