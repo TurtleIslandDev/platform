@@ -162,7 +162,7 @@ const UploadLeadFile = () => {
       const payload = {
         file: csvFile,
         mappings: fieldMappings,
-        list: listId,
+        list: listId? listId : 8000,
         source_id: sourceId,
         skip_scrubbing: skipScrubbing,
         headers: csvHeaders,
