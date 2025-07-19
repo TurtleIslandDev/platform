@@ -65,7 +65,6 @@ const UploadLeadFile = () => {
   const [errors, setErrors] = useState<string[]>([])
   const { token } = useSelector((state: any) => state.user);
 
-
   // Filter predefined columns based on search term
   const filteredColumns = PREDEFINED_COLUMNS.filter(
     (col) =>
@@ -169,8 +168,6 @@ const UploadLeadFile = () => {
         data: csvData,
         download_file: downloadFile,
       }
-
-      console.log(payload)
       
 
       // Use FormData to send file + payload
@@ -210,31 +207,52 @@ const UploadLeadFile = () => {
             throw new Error(responseData.message || "Upload failed")
           }
         } else {
+           responseData = await response.blob()
+           
+           // Get filename from response headers or use default
+           const contentDisposition = response.headers.get('content-disposition')
+           let filename = `leads_${new Date().toISOString().split("T")[0]}`
+           
+           if (contentDisposition) {
+             const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+             if (filenameMatch && filenameMatch[1]) {
+               filename = filenameMatch[1].replace(/['"]/g, '')
+             }
+           }
+           
+           // Determine file extension based on content type
+           const contentType = response.headers.get('content-type')
+           if (contentType === 'application/zip') {
+             filename = filename.endsWith('.zip') ? filename : `${filename}.zip`
+           } else if (contentType === 'text/csv') {
+             filename = filename.endsWith('.csv') ? filename : `${filename}.csv`
+           }
 
-          responseData = await response.blob()
-
-          const url = window.URL.createObjectURL(responseData)
-          const a = document.createElement("a")
-          a.href = url
-          a.download = `leads_${new Date().toISOString().split("T")[0]}.csv`
-          a.click()
-          window.URL.revokeObjectURL(url)
-        }
+           const url = window.URL.createObjectURL(responseData)
+           const a = document.createElement("a")
+           a.href = url
+           a.download = filename
+           a.click()
+           window.URL.revokeObjectURL(url)
+           
+           alert("File downloaded successfully!")
+         }
       } else {
         throw new Error(response.statusText || "Upload failed")
       }      
       
 
-      // // Reset form
-      // setCsvFile(null)      
-      // setCsvHeaders([])
-      // setCsvData([])
-      // setFieldMappings({})
-      // setListId("")
-      // setSourceId("")
-      // setSkipScrubbing(false)
-      // setErrors([])
+      // Reset form
+      setCsvFile(null)      
+      setCsvHeaders([])
+      setCsvData([])
+      setFieldMappings({})
+      setListId("")
+      setSourceId("")
+      setSkipScrubbing(false)
+      setErrors([])     
       
+      window.location.reload()      
 
     } catch (error) {
       console.error("Upload failed:", error)
@@ -243,7 +261,8 @@ const UploadLeadFile = () => {
       setIsUploading(false)
 
       // refresh the page
-      // window.location.reload()
+      window.location.reload()      
+
     }
   }
 
