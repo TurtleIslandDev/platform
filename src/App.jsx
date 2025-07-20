@@ -105,6 +105,9 @@ const ExportDataPage = lazy(() =>
 const CreateTemplatePage = lazy(() =>
   import("./pages/supervisorPages/CreateTemplatePage")
 );
+const LeadFormPage = lazy(() =>
+  import("./pages/dataVendorPages/LeadFormPage")
+);
 
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
@@ -177,6 +180,10 @@ function App() {
             <Route
               path="/data-vendor-navigation"
               element={<DataVendorNavigation />}
+            />
+            <Route
+              path="/data-vendor-navigation/lead-form"
+              element={<LeadFormPage />}
             />
             <Route
               path="/program-owner-navigation"
