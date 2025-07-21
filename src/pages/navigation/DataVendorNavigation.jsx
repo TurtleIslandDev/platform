@@ -143,14 +143,11 @@ const DataVendorNavigation = () => {
               onClick={() => {
                 navigate("/data-vendor-navigation/lead-form");
               }}
-            >
-              {true ? (
+            >              
                 <p className="w-[9rem] text-center uppercase font-bold text-[28px] text-white">
                   Lead Form
                 </p>
-              ) : (
-                <EmailSvg />
-              )}
+              
             </div>
             {/* Dashed lines extending outward */}
             <div className="absolute w-[1px] h-14 transform rotate-[50deg] -top-10 right-0 border-[1px] border-dashed border-[#D9D9D9]" />
