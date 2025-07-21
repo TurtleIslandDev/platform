@@ -6,6 +6,7 @@ import RevenueSvg from "./../../assets/SVGs/dataManagerScreen/RevenueSvg";
 import PeopleSvg from "../../assets/SVGs/dataManagerScreen/PeopleSvg";
 import SupervisorReport from "./../../assets/SVGs/dataManagerScreen/SupervisorReport";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
+import DocumentSvg from "../../assets/SVGs/globalSvgs/DocumentSvg";
 
 const DataManagerNavigation = () => {
   const navigate = useNavigate();
@@ -104,7 +105,7 @@ const DataManagerNavigation = () => {
           onMouseOver={(e) => handleMouseOver(e, "fifth")}
           onMouseLeave={(e) => handleMouseOut(e, "fifth")}
           onClick={() => {
-            navigate("/support");
+            navigate("/data-vendor-navigation/lead-form");
           }}
           className="flex items-center justify-center rounded-full border-2 border-dashed border-[#D9D9D9] w-44 h-44 absolute right-20 -bottom-52 "
         >
@@ -112,13 +113,14 @@ const DataManagerNavigation = () => {
             className={`relative flex items-center justify-center text-2xl font-semibold text-white rounded-full cursor-pointer w-[calc(100%-12px)] h-[calc(100%-12px)] ${
               hoverStates.fifth ? " bg-[#F5874B] z-[6]" : "z-[3]  bg-[#fbc89f]"
             }`}
+            
           >
             {hoverStates.fifth ? (
               <p className="uppercase font-bold text-3xl text-center">
-                Support
+                Lead Form
               </p>
             ) : (
-              <AutomateSvg />
+              <DocumentSvg />
               // <OmnichannelCommunicationSvg />
             )}
             {/* Dashed lines extending outward */}
