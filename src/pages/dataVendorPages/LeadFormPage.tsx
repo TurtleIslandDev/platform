@@ -130,6 +130,7 @@ const LeadFormPage = () => {
       return
     }
 
+    setIsUploading(true)
 
     const response = await fetch(`${UPLOAD_URL}/guides/uploadLeadForm`, {
       method: "POST",
@@ -140,7 +141,6 @@ const LeadFormPage = () => {
       body: formData,
     })
 
-    setIsUploading(true)
 
     let responseData: any = null
     if (response.ok) {
