@@ -309,7 +309,6 @@ const UploadLeadFile = () => {
               <CardDescription>Set the list ID and source ID for this upload</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-LIst              
               <div>
                 <Label htmlFor="list-id">List ID *</Label>
                 <Input
