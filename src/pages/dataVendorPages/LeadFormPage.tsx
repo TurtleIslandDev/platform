@@ -35,6 +35,7 @@ const LeadFormPage = () => {
   const [responseMessage, setResponseMessage] = useState("")
   const [isUploading, setIsUploading] = useState(false)
   const [submitError, setSubmitError] = useState(false);
+  const [confirmNameRequired, setConfirmNameRequired] = useState(false)
 
   const { token } = useSelector((state: any) => state.user);
 
@@ -59,13 +60,14 @@ const LeadFormPage = () => {
         const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
         const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
 
-        if (!hasFirstName && !hasLastName && !hasFullName) {
-          if (campaignName === "TM_Debt" && forthCRM) {
+        if (!hasFirstName && !hasLastName && !hasFullName) {          
+
+          if (campaignName === "TM_Debt") {
             setValidationWarning(
-              "Warning: CSV may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked.",
+              "Warning: CSV may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
             )
-          } else if (forthCRM) {
-            setValidationWarning("Warning: CSV may lack name fields. File may not be processed correctly.")
+          } else {
+            setValidationWarning("Warning: CSV may lack name fields.")
           }
         } else {
           setValidationWarning("")
@@ -99,12 +101,13 @@ const LeadFormPage = () => {
 
   const handleSubmit = async () => {
 
-    if (!forthCRM && !hasNameColumns) {
+    if (!forthCRM && !hasNameColumns && confirmNameRequired) {
       alert(
         "Please confirm that your CSV file contains name columns, or check ForthCRM if the opener will look up client info.",
       )
       return
     }
+    
 
     if (sendToEmails.length === 0) {
       alert("Please add at least one email address to send to")
@@ -178,7 +181,14 @@ const LeadFormPage = () => {
               <Label htmlFor="campaign-name">Campaign Name *</Label>
               <Select
                 value={campaignName}
-                onValueChange={(value) => setCampaignName(value)}
+                onValueChange={(value) => {
+                  setCampaignName(value)
+                  if (value === "TM_Debt") {
+                    setConfirmNameRequired(true)
+                  } else {
+                    setConfirmNameRequired(false)
+                  }
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select campaign" />
@@ -266,7 +276,7 @@ const LeadFormPage = () => {
             )}
 
             {/* ForthCRM Checkbox */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2" style={{ display: confirmNameRequired ? "flex" : "none" }}>
               <Checkbox
                 id="forth-crm"
                 checked={forthCRM}
@@ -276,7 +286,7 @@ const LeadFormPage = () => {
             </div>
 
             {/* Name Columns Confirmation - only show when ForthCRM is unchecked */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2" style={{ display: confirmNameRequired ? "flex" : "none" }}>
               <Checkbox
                 id="has-name-columns"
                 checked={hasNameColumns}
