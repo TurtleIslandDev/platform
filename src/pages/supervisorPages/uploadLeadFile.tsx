@@ -45,9 +45,9 @@ const PREDEFINED_COLUMNS = [
   // { id: "record_status", label: "Record Status", required: false },
 ]
 
-
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-// const UPLOAD_URL = "http://127.0.0.1:3173";
+// 
+// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
 const UploadLeadFile = () => {
@@ -149,6 +149,53 @@ const UploadLeadFile = () => {
   }
 
 
+  const checkFileValidity = async() => {
+    if (!validateMappings()) return
+    
+    try {
+
+      const payload = {
+        file: csvFile,
+        mappings: fieldMappings,
+        list: listId? listId : 8000,
+        source_id: sourceId,
+        skip_scrubbing: skipScrubbing,
+        headers: csvHeaders,
+        data: csvData,
+        download_file: downloadFile,
+      }
+      
+
+      // Use FormData to send file + payload
+      const formData = new FormData();
+      if (csvFile) {
+        formData.append("file", csvFile);
+      }
+      formData.append("mappings", JSON.stringify(fieldMappings));
+      formData.append("list", listId || "");
+      formData.append("source_id", sourceId || "");
+      if (skipScrubbing) {
+        formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
+      }
+      if (downloadFile) {
+        formData.append("download_file", JSON.stringify(downloadFile));
+      }
+
+      const response = await fetch(`${UPLOAD_URL}/guides/check-file-validity`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const responseData = await response.json();
+      console.log(responseData);
+    } catch (error) {
+      console.error("Check file validity failed:", error);
+    }
+  }
+
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -243,16 +290,16 @@ const UploadLeadFile = () => {
       
 
       // Reset form
-      setCsvFile(null)      
-      setCsvHeaders([])
-      setCsvData([])
-      setFieldMappings({})
-      setListId("")
-      setSourceId("")
-      setSkipScrubbing(false)
-      setErrors([])     
+      // setCsvFile(null)      
+      // setCsvHeaders([])
+      // setCsvData([])
+      // setFieldMappings({})
+      // setListId("")
+      // setSourceId("")
+      // setSkipScrubbing(false)
+      // setErrors([])     
       
-      window.location.reload()      
+      // window.location.reload()      
 
     } catch (error) {
       console.error("Upload failed:", error)
@@ -261,7 +308,7 @@ const UploadLeadFile = () => {
       setIsUploading(false)
 
       // refresh the page
-      window.location.reload()      
+      // window.location.reload()      
 
     }
   }
@@ -362,6 +409,11 @@ const UploadLeadFile = () => {
               </AlertDescription>
             </Alert>
           )}
+
+          {/* check if file is valid  */}
+          <Button onClick={checkFileValidity} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
+            Check File Validity
+          </Button>
 
           {/* Submit Button */}
           <Button onClick={handleSubmit} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
