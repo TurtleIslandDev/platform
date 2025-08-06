@@ -8,9 +8,11 @@ import { Alert, AlertDescription } from "../../components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
 import { Checkbox } from "../../components/ui/checkbox"
-import { Upload, Search, CheckCircle, AlertCircle, X, Plus, List } from "lucide-react"
+import { Upload, Search, CheckCircle, AlertCircle, X, Plus, List, FileCheck, Shield, Download } from "lucide-react"
 import React from "react";
 import { useSelector } from "react-redux";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/dialog"
+import { useNavigate } from "react-router-dom";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
@@ -46,11 +48,12 @@ const PREDEFINED_COLUMNS = [
 ]
 
 // 
-// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "http://127.0.0.1:3173";
+const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+// const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
 const UploadLeadFile = () => {
+  const navigate = useNavigate();
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
   const [csvData, setCsvData] = useState<string[][]>([])
@@ -59,11 +62,29 @@ const UploadLeadFile = () => {
   const [listId, setListId] = useState("")
   const [sourceId, setSourceId] = useState("")
   const [skipScrubbing, setSkipScrubbing] = useState(false)
-  const [downloadFile, setDownloadFile] = useState(false)
+  const [downloadFile, setDownloadFile] = useState(true)
+  const [showTestMode, setShowTestMode] = useState(false)
   
   const [isUploading, setIsUploading] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const { token } = useSelector((state: any) => state.user);
+
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [currentStep, setCurrentStep] = useState(1)
+  const [stepStatus, setStepStatus] = useState<{
+    step1: 'pending' | 'loading' | 'success' | 'error'
+    step2: 'pending' | 'loading' | 'success' | 'error'
+    step3: 'pending' | 'loading' | 'success' | 'error'
+  }>({
+    step1: 'pending',
+    step2: 'pending',
+    step3: 'pending'
+  })
+  const [modalError, setModalError] = useState<string>("")
+  const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null)
+  const [downloadFilename, setDownloadFilename] = useState<string>("")
+  const [uploadFileName, setUploadFileName] = useState<string>("")
 
   // Filter predefined columns based on search term
   const filteredColumns = PREDEFINED_COLUMNS.filter(
@@ -79,6 +100,7 @@ const UploadLeadFile = () => {
 
     setCsvFile(file)
     const reader = new FileReader()
+    setUploadFileName(file.name)
 
     reader.onload = (e) => {
       const text = e.target?.result as string
@@ -196,6 +218,158 @@ const UploadLeadFile = () => {
     }
   }
 
+  // Modal step functions
+  const handleStep1 = async () => {
+    setStepStatus(prev => ({ ...prev, step1: 'loading' }))
+    setModalError("")
+    
+    try {
+      if (!validateMappings()) {
+        setStepStatus(prev => ({ ...prev, step1: 'error' }))
+        setModalError("Please fix validation errors before proceeding")
+        return
+      }
+
+      const formData = new FormData();
+      if (csvFile) {
+        formData.append("file", csvFile);
+      }
+      formData.append("mappings", JSON.stringify(fieldMappings));
+      formData.append("list", listId || "");
+      formData.append("source_id", sourceId || "");
+      if (skipScrubbing) {
+        formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
+      }
+      if (downloadFile) {
+        formData.append("download_file", JSON.stringify(downloadFile));
+      }
+
+      const response = await fetch(`${UPLOAD_URL}/guides/check-file-validity`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        setStepStatus(prev => ({ ...prev, step1: 'success' }))
+        setCurrentStep(2)
+        // Automatically proceed to step 2
+        setTimeout(() => handleStep2(), 1000)
+      } else {
+        const errorData = await response.json()
+        setStepStatus(prev => ({ ...prev, step1: 'error' }))
+        setModalError(errorData.message || "File validation failed")
+      }
+    } catch (error) {
+      console.error("Step 1 failed:", error)
+      setStepStatus(prev => ({ ...prev, step1: 'error' }))
+      setModalError("Error while checking file validity")
+    }
+  }
+
+  const handleStep2 = async () => {
+    setStepStatus(prev => ({ ...prev, step2: 'loading' }))
+    setModalError("")
+    
+    try {
+      const formData = new FormData();
+      if (csvFile) {
+        formData.append("file", csvFile);
+      }
+      formData.append("mappings", JSON.stringify(fieldMappings));
+      formData.append("list", listId || "");
+      formData.append("source_id", sourceId || "");
+      formData.append("upload_file_name", uploadFileName || "csv_file.csv");
+      
+      if (skipScrubbing) {
+        formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
+      }
+      formData.append("download_file", JSON.stringify(true)); // Always true for step 2
+
+      const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const responseData = await response.blob()
+        
+        // Get filename from response headers or use default
+        const contentDisposition = response.headers.get('content-disposition')
+        let filename = `leads_${new Date().toISOString().split("T")[0]}`
+        
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1].replace(/['"]/g, '')
+          }
+        }
+        
+        // Determine file extension based on content type
+        const contentType = response.headers.get('content-type')
+        if (contentType === 'application/zip') {
+          filename = filename.endsWith('.zip') ? filename : `${filename}.zip`
+        } else if (contentType === 'text/csv') {
+          filename = filename.endsWith('.csv') ? filename : `${filename}.csv`
+        }
+
+        setDownloadBlob(responseData)
+        setDownloadFilename(filename)
+        setStepStatus(prev => ({ ...prev, step2: 'success' }))
+        setCurrentStep(3)
+        // Don't automatically proceed to step 3 - let user manually download
+      } else {
+        setStepStatus(prev => ({ ...prev, step2: 'error' }))
+        setModalError("Error while using Blacklist API")
+      }
+    } catch (error) {
+      console.error("Step 2 failed:", error)
+      setStepStatus(prev => ({ ...prev, step2: 'error' }))
+      setModalError("Error while using Blacklist API")
+    }
+  }
+
+  const handleStep3 = () => {
+    if (downloadBlob) {
+      const url = window.URL.createObjectURL(downloadBlob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = downloadFilename
+      a.click()
+      window.URL.revokeObjectURL(url)
+      
+      setStepStatus(prev => ({ ...prev, step3: 'success' }))
+      // Close modal after a short delay
+      setTimeout(() => {
+        setIsModalOpen(false)
+        resetModal()
+      }, 1000)
+    }
+  }
+
+  const resetModal = () => {
+    setCurrentStep(1)
+    setStepStatus({
+      step1: 'pending',
+      step2: 'pending',
+      step3: 'pending'
+    })
+    setModalError("")
+    setDownloadBlob(null)
+    setDownloadFilename("")
+  }
+
+  const openModal = () => {
+    setIsModalOpen(true)
+    resetModal()
+    // Automatically start the process when modal opens
+    setTimeout(() => handleStep1(), 500)
+  }
 
   // Handle form submission
   const handleSubmit = async () => {
@@ -313,11 +487,67 @@ const UploadLeadFile = () => {
     }
   }
 
+  // Step component
+  const StepIcon = ({ step, status }: { step: number, status: 'pending' | 'loading' | 'success' | 'error' }) => {
+    const getIcon = () => {
+      switch (step) {
+        case 1:
+          return <FileCheck className="h-8 w-8" />
+        case 2:
+          return <Shield className="h-8 w-8" />
+        case 3:
+          return <Download className="h-8 w-8" />
+        default:
+          return null
+      }
+    }
+
+    const getStatusColor = () => {
+      switch (status) {
+        case 'pending':
+          return 'text-gray-400'
+        case 'loading':
+          return 'text-blue-500 animate-spin'
+        case 'success':
+          return 'text-green-500'
+        case 'error':
+          return 'text-red-500'
+        default:
+          return 'text-gray-400'
+      }
+    }
+
+    return (
+      <div className={`flex items-center justify-center w-16 h-16 rounded-full border-2 ${
+        status === 'success' ? 'border-green-500 bg-green-50' :
+        status === 'error' ? 'border-red-500 bg-red-50' :
+        status === 'loading' ? 'border-blue-500 bg-blue-50' :
+        'border-gray-300 bg-gray-50'
+      }`}>
+        <div className={getStatusColor()}>
+          {getIcon()}
+        </div>
+      </div>
+    )
+  } 
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Automated Lead Upload</h1>
-        <p className="text-muted-foreground mt-2">Upload leads to VICI from a CSV file</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">Automated Lead Upload</h1>
+            <p className="text-muted-foreground mt-2">Upload leads to VICI from a CSV file</p>
+          </div>
+          <Button 
+            onClick={() => navigate("/qc-and-supervisor-navigation/show-uploads")}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <List className="h-4 w-4" />
+            View Uploads
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -385,10 +615,11 @@ const UploadLeadFile = () => {
                 <Label htmlFor="skip-scrubbing">Skip Scrubbing</Label>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2" >
                 <Checkbox
                   id="download-file"
                   checked={downloadFile}
+                  disabled={true}
                   onCheckedChange={(checked) => setDownloadFile(checked as boolean)}
                 />
                 <Label htmlFor="download-file">Download File</Label>
@@ -409,16 +640,18 @@ const UploadLeadFile = () => {
               </AlertDescription>
             </Alert>
           )}
-
-          {/* check if file is valid  */}
-          <Button onClick={checkFileValidity} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
-            Check File Validity
-          </Button>
+          
 
           {/* Submit Button */}
-          <Button onClick={handleSubmit} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
-            {isUploading ? "Uploading..." : downloadFile ? "Process & Download File" : "Upload & Process CSV"}
-          </Button>
+          {downloadFile ? (
+            <Button onClick={openModal} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
+              Process & Download File
+            </Button>
+          ) : (
+            <Button onClick={handleSubmit} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
+              {isUploading ? "Uploading..." : "Upload & Process CSV"}
+            </Button>
+          )}
         </div>
 
         {/* Right Column - Field Mapping */}
@@ -551,6 +784,60 @@ const UploadLeadFile = () => {
           )}
         </div>
       </div>
+
+      {/* Process Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle>Processing File</DialogTitle>
+            <DialogDescription>
+              Please wait while we process your file through the required steps.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Step 1 */}
+            <div className="flex items-center space-x-4">
+              <StepIcon step={1} status={stepStatus.step1} />
+              <div className="flex-1">
+                <h4 className="font-medium">Checking File Validity</h4>
+                <p className="text-sm text-muted-foreground">Validating file format and required fields</p>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex items-center space-x-4">
+              <StepIcon step={2} status={stepStatus.step2} />
+              <div className="flex-1">
+                <h4 className="font-medium"> {skipScrubbing ? "Cleaning records" : "Cleaning through BlackList"}</h4>
+                <p className="text-sm text-muted-foreground">Processing file and {skipScrubbing ? "cleaning records" : "cleaning through BlackList"}</p>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex items-center space-x-4">
+              <StepIcon step={3} status={stepStatus.step3} />
+              <div className="flex-1">
+                <h4 className="font-medium">Download File</h4>
+                <p className="text-sm text-muted-foreground">Click to download the processed file</p>
+              </div>
+              {currentStep === 3 && stepStatus.step3 === 'pending' && stepStatus.step2 === 'success' && (
+                <Button onClick={handleStep3} size="sm">
+                  Download
+                </Button>
+              )}
+            </div>
+
+            {/* Error Display */}
+            {modalError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{modalError}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
