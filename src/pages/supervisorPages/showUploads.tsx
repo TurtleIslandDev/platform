@@ -22,6 +22,7 @@ import {
   RefreshCw
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import Navbar from "../../components/navigationBar/navbar";
 
 const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
@@ -183,6 +184,7 @@ const ShowUploads = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      <Navbar />
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Upload className="h-8 w-8" />

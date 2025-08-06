@@ -13,6 +13,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "../../components/ui/dialog"
 import { useNavigate } from "react-router-dom";
+import Navbar from "../../components/navigationBar/navbar";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
@@ -533,6 +534,7 @@ const UploadLeadFile = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
+      <Navbar />
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>

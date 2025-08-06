@@ -13,11 +13,13 @@ const userSlice = createSlice({
     logout: (state) => {
       state.token = null;
       state.role = null;
+      state.username = null;
     },
 
     setUserAuth: (state, action) => {
       state.role = action.payload.data.role;
       state.token = action.payload.data.access_token;
+      state.username = action.payload.data.username;
     },
 
     setUser: (state, action) => {
