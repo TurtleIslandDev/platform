@@ -12,7 +12,14 @@ import { Upload, X, Plus, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "../../components/ui/alert"
 import { useSelector } from "react-redux"
 
-const DEFAULT_EMAILS = ["glenfiddich.apayart@itsbuzzmarketing.com", "harold.bondoc@itsbuzzmarketing.com", "jessie.fernando@itsbuzzmarketing.com"]
+const DEFAULT_EMAILS = [
+  "glenfiddich.apayart@itsbuzzmarketing.com", 
+  "harold.bondoc@itsbuzzmarketing.com", 
+  "jessie.fernando@itsbuzzmarketing.com", 
+  "james.chavez@itsbuzzmarketing.com", 
+  "kenneth.candor@itsbuzzmarketing.com",
+  "joseph.cortes@itsbuzzmarketing.com",
+]
 
 const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
