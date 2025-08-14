@@ -17,8 +17,7 @@ const DEFAULT_EMAILS = [
   "harold.bondoc@itsbuzzmarketing.com", 
   "jessie.fernando@itsbuzzmarketing.com", 
   "james.chavez@itsbuzzmarketing.com", 
-  "kenneth.candor@itsbuzzmarketing.com",
-  "joseph.cortes@itsbuzzmarketing.com",
+  "kenneth.candor@itsbuzzmarketing.com"
 ]
 
 const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
