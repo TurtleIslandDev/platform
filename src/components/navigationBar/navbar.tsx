@@ -16,7 +16,7 @@ export default function Navbar() {
   
 
   return (
-    <nav className="flex h-16 w-full items-center justify-between border-b bg-white px-6 mb-6 shadow-sm">
+    <nav className="flex h-16 w-full items-center justify-between bg-white px-6 mb-6 fixed top-0 left-0">
       {/* Brand Logo */}
       <Link to="/" className="flex items-center">
         <span className="text-2xl font-bold">

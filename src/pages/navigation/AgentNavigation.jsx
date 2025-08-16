@@ -9,6 +9,7 @@ import AgentPerformanceSvg from "../../assets/SVGs/agentScreen/AgentPerformanceS
 
 import Cookies from "universal-cookie";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
+import Navbar from "../../components/navigationBar/navbar";
 
 const AgentNavigation = () => {
   const navigate = useNavigate();
@@ -39,7 +40,9 @@ const AgentNavigation = () => {
   }, []);
 
   return (
-    <div className="w-full h-[calc(100vh+300px)]  flex items-center justify-center ">
+    <div className="flex flex-col h-screen">
+      <Navbar />
+    <div className="w-full h-[calc(100vh+20px)]  flex items-center justify-center mt-16">
       <div className="relative  rounded-full">
         {/* Agent gui */}
         <div
@@ -244,6 +247,7 @@ const AgentNavigation = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

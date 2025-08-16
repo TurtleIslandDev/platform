@@ -7,6 +7,7 @@ import PeopleSvg from "../../assets/SVGs/dataManagerScreen/PeopleSvg";
 import SupervisorReport from "./../../assets/SVGs/dataManagerScreen/SupervisorReport";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
 import DocumentSvg from "../../assets/SVGs/globalSvgs/DocumentSvg";
+import Navbar from "../../components/navigationBar/navbar";
 
 const DataManagerNavigation = () => {
   const navigate = useNavigate();
@@ -27,7 +28,9 @@ const DataManagerNavigation = () => {
     setHoverStates((prev) => ({ ...prev, [name]: false }));
   };
   return (
-    <div className="w-full h-[calc(100vh+300px)]  flex items-center justify-center ">
+    <div className="flex flex-col h-screen">
+    <Navbar />
+    <div className="w-full h-[calc(100vh+20px)]  flex items-center justify-center flex-col mt-16">
       <div className="relative  rounded-full">
         {/* Data Collection svg */}
         <div
@@ -157,6 +160,7 @@ const DataManagerNavigation = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

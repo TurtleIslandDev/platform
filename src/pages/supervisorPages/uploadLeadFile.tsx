@@ -86,6 +86,7 @@ const UploadLeadFile = () => {
   const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null)
   const [downloadFilename, setDownloadFilename] = useState<string>("")
   const [uploadFileName, setUploadFileName] = useState<string>("")
+  const [isDragging, setIsDragging] = useState(false)
 
   // Filter predefined columns based on search term
   const filteredColumns = PREDEFINED_COLUMNS.filter(
@@ -95,10 +96,8 @@ const UploadLeadFile = () => {
   )
 
   // Handle CSV file upload and parsing
-  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const parseCsvFile = useCallback((file: File) => {
     if (!file) return
-
     setCsvFile(file)
     const reader = new FileReader()
     setUploadFileName(file.name)
@@ -120,6 +119,12 @@ const UploadLeadFile = () => {
 
     reader.readAsText(file)
   }, [])
+
+  const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    parseCsvFile(file)
+  }, [parseCsvFile])
 
   // Handle field mapping with one-to-one constraint
   const handleFieldMapping = (csvField: string, predefinedField: string) => {
@@ -533,13 +538,12 @@ const UploadLeadFile = () => {
   } 
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
+    <div className="max-w-4xl mx-auto p-6 space-y-12">
       <Navbar />
       <div className="mb-8">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold">Automated Lead Upload</h1>
-            <p className="text-muted-foreground mt-2">Upload leads to VICI from a CSV file</p>
+            <h1 className="text-3xl font-bold">Automated Lead Upload</h1>            
           </div>
           <Button 
             onClick={() => navigate("/qc-and-supervisor-navigation/show-uploads")}
@@ -568,7 +572,23 @@ const UploadLeadFile = () => {
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="csv-file">CSV File</Label>
-                  <Input id="csv-file" type="file" accept=".csv" onChange={handleFileUpload} className="pt-0" />
+                  <div
+                    className={`border-2 border-dashed rounded-md p-4 transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
+                    onDragEnter={(e) => { e.preventDefault(); setIsDragging(true) }}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                    onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      setIsDragging(false)
+                      const file = e.dataTransfer.files?.[0]
+                      if (file) parseCsvFile(file)
+                    }}
+                  >
+                    <Input id="csv-file" type="file" accept=".csv" onChange={handleFileUpload} className="pt-0 hidden" />
+                    <label htmlFor="csv-file" className="cursor-pointer text-sm text-gray-600">
+                      {csvFile ? `Selected: ${csvFile.name}` : "Click or drag & drop CSV file here"}
+                    </label>
+                  </div>
                 </div>
 
                 {csvFile && (

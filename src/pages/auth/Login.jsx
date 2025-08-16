@@ -6,13 +6,14 @@ import { useNavigate } from "react-router-dom";
 import useFetch from "./../../features/hooks/useFetch";
 import { setUserAuth } from "../../features/slice/userSlice";
 import itsBuzzMarketting from "../../assets/images/itsBuzzMarketing.jpg";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 const Login = () => {
   let navigate = useNavigate();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [wait, setWait] = useState(false);
+  const { role } = useSelector((state) => state.user);
   const { postData, loading } = useFetch();
   const {
     register,
@@ -83,7 +84,73 @@ const Login = () => {
     }
   };
   useEffect(() => {
-    setWait(false);
+    if (role) {
+
+      switch (role) {
+        case "agent":
+          navigate("/agent-navigation");
+          break;
+        case "channelManager":
+          navigate("/channel-manager-navigation");
+          break;
+        case "dataManager":
+          navigate("/data-manager-navigation");
+          break;
+        case "salesManager":
+          navigate("/sales-manager-navigation");
+          break;
+        case "programManager":
+          navigate("/program-manager-navigation");
+          break;
+        case "teamLead":
+          navigate("/team-lead-navigation");
+          break;
+        case "supervisor":
+          navigate("/qc-and-supervisor-navigation");
+          break;
+        case "performanceManager":
+          navigate("/performance-navigation");
+          break;
+        case "admin":
+          navigate("/admin-navigation");
+          break;
+        case "programOwner":
+          navigate("/program-owner-navigation");
+          break;
+        case "bpo":
+          navigate("/bpo-navigation");
+          break;
+        case "dataVendor":
+          navigate("/data-vendor-navigation");
+          break;
+        case "broadcastCustomer":
+          navigate("/broadcast-customer-navigation");
+          break;
+        case "trainee":
+          navigate("/agent-trainee-navigation");
+          break;
+        case "applicant":
+          navigate("/applicant-navigation");
+          break;
+        case "internal":
+          navigate("/internal-navigation");
+          break;
+        case "partner":
+          navigate("/partner-navigation");
+          break;
+        case "supplier":
+          navigate("/supplier-navigation");
+          break;
+        case "client":
+          navigate("/client-navigation");
+          break;
+        default:
+          break;
+      }
+      console.log(role);
+    }
+
+    setWait(false);    
   }, []);
   return (
     <div

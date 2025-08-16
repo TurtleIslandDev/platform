@@ -5,6 +5,7 @@ import AddUserSvg from "../../assets/SVGs/programManagerScreen/AddUserSvg";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
 import BuzzWordSvg from "../../assets/SVGs/BuzzWordSvg";
 import PeopleSvg from "./../../assets/SVGs/dataManagerScreen/PeopleSvg";
+import Navbar from "../../components/navigationBar/navbar";
 
 const AdminNavigation = () => {
   const navigate = useNavigate();
@@ -25,7 +26,9 @@ const AdminNavigation = () => {
     setHoverStates((prev) => ({ ...prev, [name]: false }));
   };
   return (
-    <div className="w-full h-[calc(100vh+300px)]  flex items-center justify-center ">
+    <div className="flex flex-col h-screen">
+    <Navbar />
+    <div className="w-full h-[calc(100vh+20px)]  flex items-center justify-center mt-16">
       <div className="relative  rounded-full">
         {/* first */}
         <div
@@ -286,6 +289,7 @@ const AdminNavigation = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

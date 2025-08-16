@@ -11,6 +11,7 @@ import { Badge } from "../../components/ui/badge"
 import { Upload, X, Plus, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "../../components/ui/alert"
 import { useSelector } from "react-redux"
+import Navbar from "../../components/navigationBar/navbar"
 
 const DEFAULT_EMAILS = [
   "glenfiddich.apayart@itsbuzzmarketing.com", 
@@ -42,44 +43,49 @@ const LeadFormPage = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [submitError, setSubmitError] = useState(false);
   const [confirmNameRequired, setConfirmNameRequired] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [note, setNote] = useState("")
 
   const { token } = useSelector((state: any) => state.user);
 
+  const processCsvFile = (file: File) => {
+    if (!(file && (file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")))) return
+    setCsvFile(file)
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      const rows = text
+        .split("\n")
+        .slice(0, 5)
+        .map((row) => row.split(","))
+      setCsvPreview(rows)
+
+      // Check for name fields
+      const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
+      const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
+      const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
+      const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
+
+      if (!hasFirstName && !hasLastName && !hasFullName) {
+        if (campaignName === "TM_Debt") {
+          setValidationWarning(
+            "Warning: CSV may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
+          )
+        } else {
+          setValidationWarning("Warning: CSV may lack name fields.")
+        }
+      } else {
+        setValidationWarning("")
+      }
+    }
+    reader.readAsText(file)
+  }
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file && file.type === "text/csv") {
-      setCsvFile(file)
-
-      // Preview CSV content
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const text = e.target?.result as string
-        const rows = text
-          .split("\n")
-          .slice(0, 5)
-          .map((row) => row.split(","))
-        setCsvPreview(rows)
-
-        // Check for name fields
-        const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
-        const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
-        const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
-        const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
-
-        if (!hasFirstName && !hasLastName && !hasFullName) {          
-
-          if (campaignName === "TM_Debt") {
-            setValidationWarning(
-              "Warning: CSV may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
-            )
-          } else {
-            setValidationWarning("Warning: CSV may lack name fields.")
-          }
-        } else {
-          setValidationWarning("")
-        }
-      }
-      reader.readAsText(file)
+    if (file) {
+      processCsvFile(file)
     }
   }
 
@@ -130,6 +136,7 @@ const LeadFormPage = () => {
       hasNameColumns: hasNameColumns,
       scrubbing: scrubbing === "yes" ? true : false,
       sendToEmails: sendToEmails,
+      note: note,
     }))
 
     if (csvFile) {
@@ -171,8 +178,9 @@ const LeadFormPage = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <Card>
+    <div className="max-w-4xl mx-auto p-6 space-y-12">
+      <Navbar />
+      <Card className="mt-16">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
@@ -233,22 +241,49 @@ const LeadFormPage = () => {
               />
             </div>
 
+            {/* Note */}
+            <div className="space-y-2">
+              <Label htmlFor="note">Note</Label>
+              <textarea
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Enter an optional note"
+                rows={4}
+                className="w-full rounded-md border border-gray-300 bg-white p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {/* CSV File Upload */}
             <div className="space-y-2">
               <Label htmlFor="csv-file">CSV File *</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <div
+                className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
+                onDragEnter={(e) => { e.preventDefault(); setIsDragging(true) }}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                  const file = e.dataTransfer.files?.[0]
+                  if (file) {
+                    processCsvFile(file)
+                  }
+                }}
+              >
                 <input
                   id="csv-file"
                   type="file"
                   accept=".csv"
                   onChange={handleFileUpload}
                   className="hidden"
+                  
                   required
                 />
                 <label htmlFor="csv-file" className="cursor-pointer">
                   <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600">
-                    {csvFile ? csvFile.name : "Click to upload CSV file"}
+                    {csvFile ? csvFile.name : "Drag and drop or click to upload CSV file"}
                   </p>
                 </label>
               </div>

@@ -35,6 +35,7 @@ export default function CreateTemplatePage() {
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
   const [mappings, setMappings] = useState<Record<string, { fieldId: string; dataType: string; included: boolean }>>({})
   const [isUploaded, setIsUploaded] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [predefinedFields, setPredefinedFields] = useState<{ id: string; name: string; key: string; description: string; dataType: string }[]>([])
   const [dataSources, setDataSources] = useState<{ id: string; name: string }[]>([])
@@ -118,10 +119,8 @@ export default function CreateTemplatePage() {
   // Filter templates based on selected source
   const filteredTemplates = templates.filter((template) => template.sourceId === selectedSource)
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const parseCsv = (file: File) => {
     if (!file) return
-
     const reader = new FileReader()
     reader.onload = (e) => {
       const content = e.target?.result as string
@@ -131,7 +130,6 @@ export default function CreateTemplatePage() {
           const headers = lines[0].split(",").map((header) => header.trim())
           setCsvHeaders(headers)
 
-          // Initialize mappings with empty values and included
           const initialMappings: Record<string, { fieldId: string; dataType: string; included: boolean }> = {}
           headers.forEach((header) => {
             initialMappings[header] = { fieldId: "", dataType: "string", included: true }
@@ -142,6 +140,12 @@ export default function CreateTemplatePage() {
       }
     }
     reader.readAsText(file)
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    parseCsv(file)
   }
 
   const handleFieldMapping = (header: string, fieldId: string) => {    
@@ -231,14 +235,22 @@ export default function CreateTemplatePage() {
                 onChange={handleFileUpload}
                 className="hidden"
               />
-              <Button
-                variant="outline"
+              <div
+                className={`w-full h-24 border-2 border-dashed rounded-md flex flex-col items-center justify-center gap-2 transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-24 border-dashed flex flex-col items-center justify-center gap-2"
+                onDragEnter={(e) => { e.preventDefault(); setIsDragging(true) }}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                onDragLeave={(e) => { e.preventDefault(); setIsDragging(false) }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  setIsDragging(false)
+                  const file = e.dataTransfer.files?.[0]
+                  if (file) parseCsv(file)
+                }}
               >
                 <Upload className="h-6 w-6" />
-                <span>{isUploaded ? "Change File" : "Click to upload CSV"}</span>
-              </Button>
+                <span className="text-sm text-gray-600">{isUploaded ? "Change or drop CSV" : "Click or drag & drop CSV"}</span>
+              </div>
             </div>
             {isUploaded && (
               <p className="text-sm text-green-600">File uploaded successfully. {csvHeaders.length} headers found.</p>
