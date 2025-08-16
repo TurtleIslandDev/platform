@@ -202,6 +202,9 @@ const LeadFormPage = () => {
                 <SelectContent>
                   <SelectItem value="Press1">Press1</SelectItem>
                   <SelectItem value="Press1A">Press1A</SelectItem>
+                  <SelectItem value="Press1B">Press1B</SelectItem>
+                  <SelectItem value="Press1C">Press1C</SelectItem>
+                  <SelectItem value="Press1D">Press1D</SelectItem>
                   <SelectItem value="TM_Debt">TM_Debt</SelectItem>
                 </SelectContent>
               </Select>
