@@ -113,31 +113,46 @@ const LeadFormPage = () => {
 
   const handleSubmit = async () => {
 
-    if (!forthCRM && !hasNameColumns && confirmNameRequired) {
-      alert(
-        "Please confirm that your CSV file contains name columns, or check ForthCRM if the opener will look up client info.",
-      )
-      return
-    }
-    
-
-    if (sendToEmails.length === 0) {
-      alert("Please add at least one email address to send to")
-      return
+    // Skip all validation for Data Warehouse campaign - only require CSV file
+    if (campaignName === "Data Warehouse") {
+      if (!csvFile) {
+        alert("Please upload a CSV file before submitting")
+        return
+      }
+      if (sendToEmails.length === 0) {
+        alert("Please add at least one email address to send to")
+        return
+      }
+    } else {
+      // Original validation logic for other campaigns
+      if (!forthCRM && !hasNameColumns && confirmNameRequired) {
+        alert(
+          "Please confirm that your CSV file contains name columns, or check ForthCRM if the opener will look up client info.",
+        )
+        return
+      }
+      
+      if (sendToEmails.length === 0) {
+        alert("Please add at least one email address to send to")
+        return
+      }
     }
      
     const formData = new FormData();
 
-    formData.append("fields", JSON.stringify({
+    // For Data Warehouse campaigns, provide default values for empty fields
+    const fieldsData = {
       campaignName: campaignName,
-      leadProviderName: leadProviderName,
-      preferredListName: preferredListName,
-      forthCRM: forthCRM,
-      hasNameColumns: hasNameColumns,
-      scrubbing: scrubbing === "yes" ? true : false,
+      leadProviderName: campaignName === "Data Warehouse" ? (leadProviderName || "Data Warehouse") : leadProviderName,
+      preferredListName: campaignName === "Data Warehouse" ? (preferredListName || "Data Warehouse") : preferredListName,
+      forthCRM: campaignName === "Data Warehouse" ? false : forthCRM,
+      hasNameColumns: campaignName === "Data Warehouse" ? false : hasNameColumns,
+      scrubbing: campaignName === "Data Warehouse" ? false : (scrubbing === "yes" ? true : false),
       sendToEmails: sendToEmails,
-      note: note,
-    }))
+      note: campaignName === "Data Warehouse" ? (note || "Data Warehouse upload") : note,
+    };
+
+    formData.append("fields", JSON.stringify(fieldsData))
 
     if (csvFile) {
       formData.append("file", csvFile)
@@ -202,6 +217,10 @@ const LeadFormPage = () => {
                   } else {
                     setConfirmNameRequired(false)
                   }
+                  // Reset validation warnings when switching campaigns
+                  if (value !== "TM_Debt") {
+                    setValidationWarning("")
+                  }
                 }}
               >
                 <SelectTrigger>
@@ -214,19 +233,27 @@ const LeadFormPage = () => {
                   <SelectItem value="Press1C">Press1C</SelectItem>
                   <SelectItem value="Press1D">Press1D</SelectItem>
                   <SelectItem value="TM_Debt">TM_Debt</SelectItem>
+                  <SelectItem value="Data Warehouse">Data Warehouse</SelectItem>
                 </SelectContent>
               </Select>
+              {campaignName === "Data Warehouse" && (
+                <p className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
+                  ℹ️ Data Warehouse campaigns only require a CSV file upload. All other fields are optional.
+                </p>
+              )}
             </div>
 
             {/* Lead Provider Name */}
             <div className="space-y-2">
-              <Label htmlFor="lead-provider">Lead Provider Name *</Label>
+              <Label htmlFor="lead-provider">
+                Lead Provider Name {campaignName === "Data Warehouse" ? "" : "*"}
+              </Label>
               <Input
                 id="lead-provider"
                 value={leadProviderName}
                 onChange={(e) => setLeadProviderName(e.target.value)}
                 placeholder="Enter lead provider name"
-                required
+                required={campaignName !== "Data Warehouse"}
               />
             </div>
 
@@ -344,22 +371,24 @@ const LeadFormPage = () => {
             </div>
 
             {/* Scrubbing Question */}
-            <div className="space-y-3">
-              <Label>Scrubbing Required? *</Label>
-              <RadioGroup
-                value={scrubbing}
-                onValueChange={(value) => setScrubbing(value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="yes" id="scrubbing-yes" />
-                  <Label htmlFor="scrubbing-yes">Yes</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="no" id="scrubbing-no" />
-                  <Label htmlFor="scrubbing-no">No</Label>
-                </div>
-              </RadioGroup>
-            </div>
+            {campaignName !== "Data Warehouse" && (
+              <div className="space-y-3">
+                <Label>Scrubbing Required? *</Label>
+                <RadioGroup
+                  value={scrubbing}
+                  onValueChange={(value) => setScrubbing(value)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="scrubbing-yes" />
+                    <Label htmlFor="scrubbing-yes">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="scrubbing-no" />
+                    <Label htmlFor="scrubbing-no">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
 
             {/* Send To Emails */}
             <div className="space-y-4">
