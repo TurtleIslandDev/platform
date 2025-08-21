@@ -221,6 +221,10 @@ const LeadFormPage = () => {
                   if (value !== "TM_Debt") {
                     setValidationWarning("")
                   }
+
+                  if (value === "Data Warehouse") {
+                    setSendToEmails(["sathish.kothandam@itsbuzzmarketing.com", ...sendToEmails])
+                  }
                 }}
               >
                 <SelectTrigger>
