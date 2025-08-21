@@ -224,6 +224,8 @@ const LeadFormPage = () => {
 
                   if (value === "Data Warehouse") {
                     setSendToEmails(["sathish.kothandam@itsbuzzmarketing.com", ...sendToEmails])
+                  } else {
+                    setSendToEmails(sendToEmails.filter((email) => email !== "sathish.kothandam@itsbuzzmarketing.com"))
                   }
                 }}
               >
