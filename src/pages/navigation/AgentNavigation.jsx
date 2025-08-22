@@ -10,10 +10,16 @@ import AgentPerformanceSvg from "../../assets/SVGs/agentScreen/AgentPerformanceS
 import Cookies from "universal-cookie";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
 import Navbar from "../../components/navigationBar/navbar";
+import { useDispatch, useSelector } from "react-redux";
+
 
 const AgentNavigation = () => {
   const navigate = useNavigate();
-  const cookies = new Cookies(null, null, { path: "/" });
+  const { ipAddress, username, token } = useSelector((state) => state.user);
+  const [wait, setWait] = useState(false);
+  const dispatch = useDispatch();
+  const AUTH_URL = "https://auth.itsbuzzmarketing.com";
+
   const [hoverStates, setHoverStates] = useState({
     sixth: false,
     agentGUI: false,
@@ -32,14 +38,20 @@ const AgentNavigation = () => {
     setHoverStates((prev) => ({ ...prev, [name]: false }));
   };
 
-  useEffect(() => {
-    const token = cookies.get("token");
-    // if (!token) {
-    //   navigate("/");
-    // }
-  }, []);
 
   return (
+    <>
+    {wait ? (
+      <div className="text-center mb-40">
+        <h1 className="font-semibold text-2xl">
+          We're verifying and whitelisting your IP
+        </h1>
+        <p className="text-xl">
+          This may take up to 30 seconds. Please hold on—we’ll redirect you
+          shortly!
+        </p>
+      </div>
+    ) : (
     <div className="flex flex-col h-screen">
       <Navbar />
     <div className="w-full h-[calc(100vh+20px)]  flex items-center justify-center mt-16">
@@ -50,8 +62,59 @@ const AgentNavigation = () => {
         >
           <div
             onClick={() => {
-              window.location.href =
-                "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
+
+              const updateIPAddress = async () => {
+
+
+                const response = await fetch("https://api.ipify.org?format=json");
+                const resData = await response.json();
+                if (resData.ip) {
+          
+                  const ip = resData.ip;
+          
+                  if (ip !== ipAddress) {
+                            
+                    const res = await fetch(`${AUTH_URL}/guide_auth/whitelist_ip`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({
+                        ip: ip,
+                        username: username,
+                      }),
+                    });
+          
+                    if (res.status === 200) {
+                      dispatch(setIpAddress(ip));
+
+                      setTimeout(() => {
+                        window.location.href =
+                          "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
+                      }, 10000);
+
+                      setWait(true);
+                    }
+          
+                  } else {
+                    window.location.href =
+                      "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
+                  }
+                }
+              }
+          
+              if (ipAddress !== null && username !== null) {
+                updateIPAddress();                
+              }
+              else {
+                window.location.href =
+                  "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
+              }
+
+
+
+
             }}
             onMouseOver={(e) => handleMouseOver(e, "agentGUI")}
             onMouseLeave={(e) => handleMouseOut(e, "agentGUI")}
@@ -249,6 +312,8 @@ const AgentNavigation = () => {
       </div>
     </div>
     </div>
+    )}
+    </>
   );
 };
 
