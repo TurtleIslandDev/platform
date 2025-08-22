@@ -11,6 +11,7 @@ import Cookies from "universal-cookie";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
 import Navbar from "../../components/navigationBar/navbar";
 import { useDispatch, useSelector } from "react-redux";
+import { setIpAddress } from "../../features/slice/userSlice";
 
 
 const AgentNavigation = () => {
