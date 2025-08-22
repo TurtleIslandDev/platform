@@ -14,12 +14,13 @@ const userSlice = createSlice({
       state.token = null;
       state.role = null;
       state.username = null;
+      // state.ipAddress = null; # even if the user is logged out, the ip address is still needed for the whitelisting
     },
 
     setUserAuth: (state, action) => {
       state.role = action.payload.data.role;
       state.token = action.payload.data.access_token;
-      state.username = action.payload.data.username;
+      state.username = action.payload.data.username;      
     },
 
     setUser: (state, action) => {
@@ -30,6 +31,10 @@ const userSlice = createSlice({
     setTobeEdited: (state, action) => {
       state.toBeEdited = action.payload.data;
     },
+
+    setIpAddress: (state, action) => {
+      state.ipAddress = action.payload;
+    },
   },
 
   // extraReducers: (builder) => {
@@ -37,6 +42,6 @@ const userSlice = createSlice({
   // },
 });
 
-export const { logout, setUser, setUserAuth, setTobeEdited } =
+export const { logout, setUser, setUserAuth, setTobeEdited, setIpAddress } =
   userSlice.actions;
 export default userSlice.reducer;

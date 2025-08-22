@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 // import Cookies from "universal-cookie";
 import useFetch from "./../../features/hooks/useFetch";
-import { setUserAuth } from "../../features/slice/userSlice";
+import { setIpAddress, setUserAuth } from "../../features/slice/userSlice";
 import itsBuzzMarketting from "../../assets/images/itsBuzzMarketing.jpg";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -25,7 +25,10 @@ const Login = () => {
       let response = await fetch("https://api.ipify.org?format=json");
       let resData = await response.json();
       if (resData.ip) {
-        data.ipAddress = resData.ip;
+        const ipAddress = resData.ip;
+        data.ipAddress = ipAddress;
+
+        dispatch(setIpAddress(ipAddress));
       }
     } catch (error) {}
     // console.log(data);

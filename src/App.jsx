@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import AgentSystemsTraining from "./pages/agentPages/AgentSystemsTraining";
 import InteractionGuidePage from "./pages/IG/InteractionGuidePage";
 import AddUserSupervisor from "./pages/supervisorPages/AddUserSupervisor";
@@ -115,17 +115,64 @@ const ShowUploads = lazy(() =>
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
 import AgentPerformanceNavigation from "./pages/agentPages/Performance/AgentPerformanceNavigation";
+
+import { useDispatch, useSelector } from "react-redux";
+import { setIpAddress } from "./features/slice/userSlice";
+
 function App() {
   const height = useWindowHeight();
+  const dispatch = useDispatch();
+  const { ipAddress, username, token } = useSelector((state) => state.user);
+
+  const AUTH_URL = "https://auth.itsbuzzmarketing.com";
+  
+  useEffect(() => {
+
+    const updateIPAddress = async () => {
+
+
+      const response = await fetch("https://api.ipify.org?format=json");
+      const resData = await response.json();
+      if (resData.ip) {
+
+        const ip = resData.ip;
+
+        if (ip !== ipAddress) {
+                  
+          const res = await fetch(`${AUTH_URL}/guide_auth/whitelist_ip`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              ip: ip,
+              username: username,
+            }),
+          });
+
+          if (res.status === 200) {
+            dispatch(setIpAddress(ip));
+          }
+
+        }
+      }
+    }
+
+    if (ipAddress !== null && username !== null) {
+      updateIPAddress();
+    }
+  }, [ipAddress, username]);
+
   return (
     <>
       {/* there is new react-router-version comming so if any issues faced for routing look at the new documentations */}
       <BrowserRouter>
         <Suspense
           fallback={
-            <div class="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
-              <div class="flex justify-center items-center mt-[50vh]">
-                <div class="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
+            <div className="w-full h-full fixed top-0 left-0 bg-white opacity-75 z-50">
+              <div className="flex justify-center items-center mt-[50vh]">
+                <div className="fas fa-circle-notch fa-spin fa-5x text-violet-600"></div>
               </div>
             </div>
           }
