@@ -62,7 +62,7 @@ const UploadLeadFile = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [listId, setListId] = useState("")
   const [sourceId, setSourceId] = useState("")
-  const [skipScrubbing, setSkipScrubbing] = useState(false)
+  const [skipScrubbing, setSkipScrubbing] = useState(true)
   const [downloadFile, setDownloadFile] = useState(true)
   const [showTestMode, setShowTestMode] = useState(false)
   
@@ -632,6 +632,7 @@ const UploadLeadFile = () => {
                 <Checkbox
                   id="skip-scrubbing"
                   checked={skipScrubbing}
+
                   onCheckedChange={(checked) => setSkipScrubbing(checked as boolean)}
                 />
                 <Label htmlFor="skip-scrubbing">Skip Scrubbing</Label>

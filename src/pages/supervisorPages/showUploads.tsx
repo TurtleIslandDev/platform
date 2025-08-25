@@ -34,9 +34,13 @@ const mockUploadData = [
     data: {
       good_phone_count: 195,
       total_categories: {
-        suppress: 64,
+        all_clean: 45,
+        carrier: 32,
+        federal_dnc: 64,
+        invalid: 12,
         landline: 64,
-        federal_dnc: 64
+        no_carrier: 8,
+        wireless: 28
       },
       test_mode: "true",
       upload_file_name: "test_200.csv",
@@ -49,9 +53,13 @@ const mockUploadData = [
     data: {
       good_phone_count: 95,
       total_categories: {
-        suppress: 20,
+        all_clean: 25,
+        carrier: 18,
+        federal_dnc: 10,
+        invalid: 5,
         landline: 15,
-        federal_dnc: 10
+        no_carrier: 3,
+        wireless: 12
       },
       test_mode: "true",
       upload_file_name: "test_100.csv",
@@ -64,9 +72,12 @@ const mockUploadData = [
     data: {
       good_phone_count: 250,
       total_categories: {
-        suppress: 45,
-        landline: 30,
+        all_clean: 60,
+        carrier: 45,
         federal_dnc: 25,
+        invalid: 8,
+        landline: 30,
+        no_carrier: 12,
         wireless: 15
       },
       test_mode: "false",
@@ -80,11 +91,13 @@ const mockUploadData = [
     data: {
       good_phone_count: 180,
       total_categories: {
-        suppress: 35,
-        landline: 25,
+        all_clean: 40,
+        carrier: 35,
         federal_dnc: 20,
-        wireless: 10,
-        business: 5
+        invalid: 6,
+        landline: 25,
+        no_carrier: 9,
+        wireless: 10
       },
       test_mode: "false",
       upload_file_name: "live_180.csv",
@@ -103,18 +116,7 @@ const ShowUploads = () => {
   const [showTestMode, setShowTestMode] = useState(false);   
   const { token } = useSelector((state: any) => state.user);
 
-  // Get all unique categories from the data
-  const getAllCategories = () => {
-    const categories = new Set<string>();
-    uploadData.forEach((upload: any) => {
-      Object.keys(upload.data.total_categories).forEach(category => {
-        categories.add(category);
-      });
-    });
-    return Array.from(categories).sort();
-  };
 
-  const categories = getAllCategories();
 
   // Filter data based on search term and test mode
   useEffect(() => {
@@ -149,7 +151,7 @@ const ShowUploads = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setUploadData(data.data);
+        setUploadData(data.data.reverse());
       } else {
         console.error("Failed to fetch upload data");
       }
@@ -183,9 +185,9 @@ const ShowUploads = () => {
   const stats = getTotalStats();
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-12">
+    <div className="max-w-4xl p-6 space-y-12">
       <Navbar />
-      <div className="mb-8">
+      <div className="mb-8 mx-auto">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Upload className="h-8 w-8" />
           Upload History
@@ -196,7 +198,9 @@ const ShowUploads = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+      <div 
+      className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6"      
+      >
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -317,7 +321,11 @@ const ShowUploads = () => {
       </Card>
 
       {/* Data Table */}
-      <Card>
+      <Card
+      style={{
+        width: "min-content",
+      }}
+      >
         <CardHeader>
           <CardTitle>Upload Records</CardTitle>
           <CardDescription>
@@ -339,11 +347,13 @@ const ShowUploads = () => {
                     <TableHead>Username</TableHead>
                     <TableHead>Filename</TableHead>
                     <TableHead>Phone Count</TableHead>
-                    {categories.map(category => (
-                      <TableHead key={category} className="capitalize">
-                        {category.replace(/_/g, ' ')}
-                      </TableHead>
-                    ))}
+                    <TableHead>All Clean</TableHead>
+                    <TableHead>Carrier</TableHead>
+                    <TableHead>Federal DNC</TableHead>
+                    <TableHead>Invalid</TableHead>
+                    <TableHead>Landline</TableHead>
+                    <TableHead>No Carrier</TableHead>
+                    <TableHead>Wireless</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -373,11 +383,27 @@ const ShowUploads = () => {
                           {upload?.data?.good_phone_count.toLocaleString()}
                         </div>
                       </TableCell>
-                      {categories.map(category => (
-                        <TableCell key={category}>
-                          {upload?.data?.total_categories[category] || 0}
-                        </TableCell>
-                      ))}
+                      <TableCell>
+                        {upload?.data?.total_categories?.all_clean || 0}
+                      </TableCell>
+                      <TableCell>
+                        {upload?.data?.total_categories?.carrier || 0}
+                      </TableCell>
+                      <TableCell>
+                        {upload?.data?.total_categories?.federal_dnc || 0}
+                      </TableCell>
+                      <TableCell>
+                        {upload?.data?.total_categories?.invalid || 0}
+                      </TableCell>
+                      <TableCell>
+                        {upload?.data?.total_categories?.landline || 0}
+                      </TableCell>
+                      <TableCell>
+                        {upload?.data?.total_categories?.no_carrier || 0}
+                      </TableCell>
+                      <TableCell>
+                        {upload?.data?.total_categories?.wireless || 0}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
