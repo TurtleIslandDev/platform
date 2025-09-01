@@ -373,6 +373,10 @@ function App() {
               element={<DataManagerNavigation />}
             />
             <Route
+              path="/data-manager-navigation/upload-lead-file"
+              element={<UploadLeadFile />}
+            />
+            <Route
               path="/channel-manager-navigation"
               element={<ChannelManagerNavigation />}
             />
