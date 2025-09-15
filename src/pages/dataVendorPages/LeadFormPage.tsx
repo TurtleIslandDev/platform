@@ -8,10 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Checkbox } from "../../components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group"
 import { Badge } from "../../components/ui/badge"
-import { Upload, X, Plus, AlertTriangle, History } from "lucide-react"
+import { Upload, X, Plus, AlertTriangle } from "lucide-react"
 import { Alert, AlertDescription } from "../../components/ui/alert"
 import { useSelector } from "react-redux"
-import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
 
 const DEFAULT_EMAILS = [
@@ -22,8 +21,8 @@ const DEFAULT_EMAILS = [
   "kenneth.candor@itsbuzzmarketing.com"
 ]
 
-// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "http://127.0.0.1:3173";
+const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+// const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
 const LeadFormPage = () => {
@@ -48,7 +47,6 @@ const LeadFormPage = () => {
   const [note, setNote] = useState("")
 
   const { token } = useSelector((state: any) => state.user);
-  const navigate = useNavigate();
 
   const processCsvFile = (file: File) => {
     if (!(file && (file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")))) return
@@ -199,25 +197,11 @@ const LeadFormPage = () => {
       <Navbar />
       <Card className="mt-16">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Lead Upload Form
-              </CardTitle>
-              <CardDescription>Upload CSV lead files with campaign details and recipient information</CardDescription>
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                navigate("/data-vendor-navigation/lead-uploads")
-              }}
-              className="flex items-center gap-2"
-            >
-              <History className="h-4 w-4" />
-              View Upload History
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Lead Upload Form
+          </CardTitle>
+          <CardDescription>Upload CSV lead files with campaign details and recipient information</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
