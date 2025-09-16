@@ -49,8 +49,11 @@ const PREDEFINED_COLUMNS = [
 ]
 
 // 
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 
+// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+// const UPLOAD_URL = "http://127.0.0.1:3173";
+
+const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
@@ -86,8 +89,12 @@ const UploadLeadFile = () => {
   const [modalError, setModalError] = useState<string>("")
   const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null)
   const [downloadFilename, setDownloadFilename] = useState<string>("")
+  const [duplicateBlob, setDuplicateBlob] = useState<Blob | null>(null)
+  const [duplicateFilename, setDuplicateFilename] = useState<string>("")
   const [uploadFileName, setUploadFileName] = useState<string>("")
   const [isDragging, setIsDragging] = useState(false)
+  const [enableDuplicateCheck, setEnableDuplicateCheck] = useState(false)
+  const [duplicateCheckScope, setDuplicateCheckScope] = useState<'system' | 'list'>('system')
 
   // Filter predefined columns based on search term
   const filteredColumns = PREDEFINED_COLUMNS.filter(
@@ -281,6 +288,57 @@ const UploadLeadFile = () => {
     setModalError("")
     
     try {
+      // If duplicate check is enabled, do it first
+      if (enableDuplicateCheck) {
+        const duplicateFormData = new FormData();
+        if (csvFile) {
+          duplicateFormData.append("file", csvFile);
+        }
+        duplicateFormData.append("mappings", JSON.stringify(fieldMappings));
+        duplicateFormData.append("list", listId || "");
+        duplicateFormData.append("source_id", sourceId || "");
+        duplicateFormData.append("dup_check_scope", duplicateCheckScope);
+
+        const duplicateResponse = await fetch(`${UPLOAD_URL}/guides/check-duplicates`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: duplicateFormData,
+        });
+
+        if (!duplicateResponse.ok) {
+
+          try {
+            const errorData = await duplicateResponse.json()
+            setModalError(errorData.message || "Error while checking for duplicates")
+          } catch (error) {
+            console.error("Error while checking for duplicates:", error)
+            setModalError("Error while checking for duplicates")
+          }
+          setStepStatus(prev => ({ ...prev, step2: 'error' }))
+          return
+        }
+
+        const duplicateData = await duplicateResponse.blob()
+        
+        // Get filename from response headers or use default
+        const contentDisposition = duplicateResponse.headers.get('content-disposition')
+        let duplicateFilename = `duplicates_${new Date().toISOString().split("T")[0]}.csv`
+        
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+          if (filenameMatch && filenameMatch[1]) {
+            duplicateFilename = filenameMatch[1].replace(/['"]/g, '')
+          }
+        }
+
+        setDuplicateBlob(duplicateData)
+        setDuplicateFilename(duplicateFilename)
+        setStepStatus(prev => ({ ...prev, step2: 'success' }))
+      }
+
+      // Now proceed with the upload
       const formData = new FormData();
       if (csvFile) {
         formData.append("file", csvFile);
@@ -290,10 +348,17 @@ const UploadLeadFile = () => {
       formData.append("source_id", sourceId || "");
       formData.append("upload_file_name", uploadFileName || "csv_file.csv");
       
+      // add duplicate file 
+      if (duplicateBlob) {
+        // convert blob to file
+        const duplicateFile = new File([duplicateBlob], duplicateFilename, { type: 'text/csv' });
+        formData.append("duplicate_file", duplicateFile);
+      }
+
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
-      formData.append("download_file", JSON.stringify(true)); // Always true for step 2
+      formData.append("download_file", JSON.stringify(true));
 
       const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
         method: "POST",
@@ -329,19 +394,20 @@ const UploadLeadFile = () => {
         setDownloadFilename(filename)
         setStepStatus(prev => ({ ...prev, step2: 'success' }))
         setCurrentStep(3)
-        // Don't automatically proceed to step 3 - let user manually download
+        // Automatically proceed to step 3 (download)
+        setTimeout(() => handleStep3(), 1000)
       } else {
         setStepStatus(prev => ({ ...prev, step2: 'error' }))
-        setModalError("Error while using Blacklist API")
+        setModalError("Error while uploading file")
       }
     } catch (error) {
       console.error("Step 2 failed:", error)
       setStepStatus(prev => ({ ...prev, step2: 'error' }))
-      setModalError("Error while using Blacklist API")
+      setModalError("Error during processing")
     }
   }
 
-  const handleStep3 = () => {
+  const downloadProcessedFile = () => {
     if (downloadBlob) {
       const url = window.URL.createObjectURL(downloadBlob)
       const a = document.createElement("a")
@@ -349,15 +415,24 @@ const UploadLeadFile = () => {
       a.download = downloadFilename
       a.click()
       window.URL.revokeObjectURL(url)
-      
-      setStepStatus(prev => ({ ...prev, step3: 'success' }))
-      // Close modal after a short delay
-      setTimeout(() => {
-        setIsModalOpen(false)
-        resetModal()
-      }, 1000)
     }
   }
+
+  const downloadDuplicatesFile = () => {
+    if (duplicateBlob) {
+      const url = window.URL.createObjectURL(duplicateBlob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = duplicateFilename
+      a.click()
+      window.URL.revokeObjectURL(url)
+    }
+  }
+
+  const handleStep3 = () => {
+    setStepStatus(prev => ({ ...prev, step3: 'success' }))
+  }
+
 
   const resetModal = () => {
     setCurrentStep(1)
@@ -369,6 +444,8 @@ const UploadLeadFile = () => {
     setModalError("")
     setDownloadBlob(null)
     setDownloadFilename("")
+    setDuplicateBlob(null)
+    setDuplicateFilename("")
   }
 
   const openModal = () => {
@@ -406,6 +483,11 @@ const UploadLeadFile = () => {
       formData.append("mappings", JSON.stringify(fieldMappings));
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
+
+      if (enableDuplicateCheck) {        
+        formData.append("duplicate_check_scope", duplicateCheckScope);
+      }
+
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
@@ -648,6 +730,46 @@ const UploadLeadFile = () => {
                 />
                 <Label htmlFor="download-file">Download File</Label>
               </div>
+
+              {/* Duplicate Check Options */}
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="enable-duplicate-check"
+                    checked={enableDuplicateCheck}
+                    onCheckedChange={(checked) => setEnableDuplicateCheck(checked as boolean)}
+                  />
+                  <Label htmlFor="enable-duplicate-check">Enable Duplicate Check</Label>
+                </div>
+                
+                {enableDuplicateCheck && (
+                  <div className="ml-6 space-y-2">
+                    <Label className="text-sm font-medium">Check Scope:</Label>
+                    <div className="flex gap-4">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="duplicate-system"
+                          name="duplicate-scope"
+                          checked={duplicateCheckScope === 'system'}
+                          onChange={() => setDuplicateCheckScope('system')}
+                        />
+                        <Label htmlFor="duplicate-system" className="text-sm">Entire System</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="duplicate-list"
+                          name="duplicate-scope"
+                          checked={duplicateCheckScope === 'list'}
+                          onChange={() => setDuplicateCheckScope('list')}
+                        />
+                        <Label htmlFor="duplicate-list" className="text-sm">Current List ID ({listId || 'Not set'})</Label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -815,7 +937,7 @@ const UploadLeadFile = () => {
           <DialogHeader>
             <DialogTitle>Processing File</DialogTitle>
             <DialogDescription>
-              Please wait while we process your file through the required steps.
+              Please wait while we process your file.
             </DialogDescription>
           </DialogHeader>
           
@@ -833,23 +955,50 @@ const UploadLeadFile = () => {
             <div className="flex items-center space-x-4">
               <StepIcon step={2} status={stepStatus.step2} />
               <div className="flex-1">
-                <h4 className="font-medium"> {skipScrubbing ? "Cleaning records" : "Cleaning through BlackList"}</h4>
-                <p className="text-sm text-muted-foreground">Processing file and {skipScrubbing ? "cleaning records" : "cleaning through BlackList"}</p>
+                <h4 className="font-medium">
+                  {enableDuplicateCheck 
+                    ? "Checking Duplicates & Processing" 
+                    : (skipScrubbing ? "Cleaning records" : "Cleaning through BlackList")
+                  }
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  {enableDuplicateCheck 
+                    ? `Checking duplicates against ${duplicateCheckScope === 'system' ? 'entire system' : `list ${listId}`} and processing file`
+                    : `Processing file and ${skipScrubbing ? "cleaning records" : "cleaning through BlackList"}`
+                  }
+                </p>
               </div>
             </div>
 
-            {/* Step 3 */}
+            {/* Step 3 - Download Files */}
             <div className="flex items-center space-x-4">
               <StepIcon step={3} status={stepStatus.step3} />
               <div className="flex-1">
-                <h4 className="font-medium">Download File</h4>
-                <p className="text-sm text-muted-foreground">Click to download the processed file</p>
+                <h4 className="font-medium">Download Files</h4>
+                <p className="text-sm text-muted-foreground">
+                  {enableDuplicateCheck 
+                    ? "Download the processed file and duplicates file separately" 
+                    : "Download the processed file"
+                  }
+                </p>
+                {currentStep === 3 && stepStatus.step2 === 'success' && (
+                  <div className="flex gap-2 mt-2">
+                    <Button onClick={downloadProcessedFile} size="sm" variant="outline">
+                      <Download className="h-4 w-4 mr-1" />
+                      Processed File
+                    </Button>
+                    {enableDuplicateCheck && duplicateBlob && (
+                      <Button onClick={downloadDuplicatesFile} size="sm" variant="outline">
+                        <Download className="h-4 w-4 mr-1" />
+                        Duplicates File
+                      </Button>
+                    )}
+                    <Button onClick={handleStep3} size="sm">
+                      Close
+                    </Button>
+                  </div>
+                )}
               </div>
-              {currentStep === 3 && stepStatus.step3 === 'pending' && stepStatus.step2 === 'success' && (
-                <Button onClick={handleStep3} size="sm">
-                  Download
-                </Button>
-              )}
             </div>
 
             {/* Error Display */}

@@ -372,9 +372,40 @@ const ShowUploads = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 group relative">
                           <FileText className="h-4 w-4 text-muted-foreground" />
-                          {upload?.data?.upload_file_name}
+                          <span className="truncate max-w-[180px]" title={upload?.data?.upload_file_name}>
+                            {upload?.data?.upload_file_name}
+                          </span>
+
+                          {upload?.uploaded_filename && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 hover:bg-blue-50"
+                              title="Download file"
+                              onClick={() => {
+                                    // Create download link
+                                    const link = document.createElement('a');
+                                    const parts = upload.uploaded_filename.split('/')
+                                    const filename = parts[parts.length - 1]
+                                    // directory is everything before the filename
+                                    const directory = parts.slice(0, -1).join('/')
+                                    const url = `http://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
+                                    
+                                    link.href = url;
+                                    link.download = filename || 'download.csv';
+                                    link.target = '_blank';
+                                    link.rel = 'noopener noreferrer';
+                                    
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                              }}
+                            >
+                              <Download className="h-3 w-3 text-blue-600" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>

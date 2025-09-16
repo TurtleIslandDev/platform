@@ -111,6 +111,9 @@ const LeadFormPage = lazy(() =>
 const ShowUploads = lazy(() =>
   import("./pages/supervisorPages/showUploads")
 );
+const LeadUploads = lazy(() =>
+  import("./pages/dataVendorPages/LeadUploads")
+);
 
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
@@ -234,6 +237,10 @@ function App() {
             <Route
               path="/data-vendor-navigation/lead-form"
               element={<LeadFormPage />}
+            />
+            <Route
+              path="/data-vendor-navigation/lead-uploads"
+              element={<LeadUploads />}
             />
             <Route
               path="/program-owner-navigation"
