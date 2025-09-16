@@ -28,8 +28,8 @@ import {
 import { useSelector } from "react-redux";
 import Navbar from "../../components/navigationBar/navbar";
 
-// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "http://127.0.0.1:3173";
+const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+// const UPLOAD_URL = "http://127.0.0.1:3173";
 
 const LeadUploads = () => {
   const [uploadData, setUploadData] = useState([]);
