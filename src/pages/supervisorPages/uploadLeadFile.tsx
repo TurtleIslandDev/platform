@@ -49,8 +49,8 @@ const PREDEFINED_COLUMNS = [
 ]
 
 // 
-// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "http://127.0.0.1:3173";
+const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+// const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
 const UploadLeadFile = () => {
@@ -77,10 +77,12 @@ const UploadLeadFile = () => {
     step1: 'pending' | 'loading' | 'success' | 'error'
     step2: 'pending' | 'loading' | 'success' | 'error'
     step3: 'pending' | 'loading' | 'success' | 'error'
+    step4: 'pending' | 'loading' | 'success' | 'error'
   }>({
     step1: 'pending',
     step2: 'pending',
-    step3: 'pending'
+    step3: 'pending',
+    step4: 'pending'
   })
   const [modalError, setModalError] = useState<string>("")
   const [downloadBlob, setDownloadBlob] = useState<Blob | null>(null)
@@ -284,7 +286,7 @@ const UploadLeadFile = () => {
     setModalError("")
     
     try {
-      // If duplicate check is enabled, do it first
+      // Step 2: Check for duplicates (if enabled)
       if (enableDuplicateCheck) {
         const duplicateFormData = new FormData();
         if (csvFile) {
@@ -304,7 +306,6 @@ const UploadLeadFile = () => {
         });
 
         if (!duplicateResponse.ok) {
-
           try {
             const errorData = await duplicateResponse.json()
             setModalError(errorData.message || "Error while checking for duplicates")
@@ -331,10 +332,31 @@ const UploadLeadFile = () => {
 
         setDuplicateBlob(duplicateData)
         setDuplicateFilename(duplicateFilename)
-        setStepStatus(prev => ({ ...prev, step2: 'success' }))
       }
 
-      // Now proceed with the upload
+      setStepStatus(prev => ({ ...prev, step2: 'success' }))
+      setCurrentStep(3)
+      // Automatically proceed to step 3
+      if (enableDuplicateCheck) {
+        // wait until duplicate file is generated        
+        setTimeout(() => handleStep3(), 3000)
+      }
+      else {
+        setTimeout(() => handleStep3(), 1000)
+      }
+    } catch (error) {
+      console.error("Step 2 failed:", error)
+      setStepStatus(prev => ({ ...prev, step2: 'error' }))
+      setModalError("Error during duplicate checking")
+    }
+  }
+
+  const handleStep3 = async () => {
+    setStepStatus(prev => ({ ...prev, step3: 'loading' }))
+    setModalError("")
+    
+    try {
+      // Step 3: Process and upload file
       const formData = new FormData();
       if (csvFile) {
         formData.append("file", csvFile);
@@ -343,12 +365,24 @@ const UploadLeadFile = () => {
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
       formData.append("upload_file_name", uploadFileName || "csv_file.csv");
+
+      // added duplicate check scope incase blob is not available and re-dedup check is needed
+      formData.append("duplicate_check_scope", duplicateCheckScope || "");
       
-      // add duplicate file 
-      if (duplicateBlob) {
-        // convert blob to file
-        const duplicateFile = new File([duplicateBlob], duplicateFilename, { type: 'text/csv' });
-        formData.append("duplicate_file", duplicateFile);
+      // add duplicate file if available
+      // Ensure duplicateBlob is a Blob and duplicateFilename is set before appending
+      if (duplicateBlob && duplicateFilename) {
+        try {
+          // Defensive: If duplicateBlob is not a Blob, try to convert
+          const blobToUse = duplicateBlob instanceof Blob ? duplicateBlob : new Blob([duplicateBlob], { type: 'text/csv' });
+          const duplicateFile = new File([blobToUse], duplicateFilename, { type: 'text/csv' });
+          formData.append("duplicate_file", duplicateFile);
+          console.log("added duplicate file", duplicateFile)
+        } catch (e) {
+          console.error("Failed to add duplicate file to formData", e);
+        }
+      } else {
+        console.warn("Duplicate file not added: missing blob or filename");
       }
 
       if (skipScrubbing) {
@@ -388,18 +422,19 @@ const UploadLeadFile = () => {
 
         setDownloadBlob(responseData)
         setDownloadFilename(filename)
-        setStepStatus(prev => ({ ...prev, step2: 'success' }))
-        setCurrentStep(3)
-        // Automatically proceed to step 3 (download)
-        setTimeout(() => handleStep3(), 1000)
+        setStepStatus(prev => ({ ...prev, step3: 'success' }))
+        setCurrentStep(4)
+        // Automatically proceed to step 4
+        setTimeout(() => handleStep4(), 1000)
       } else {
-        setStepStatus(prev => ({ ...prev, step2: 'error' }))
-        setModalError("Error while uploading file")
+        const errorData = await response.json()
+        setModalError(errorData.message || "Error while processing file")
+        setStepStatus(prev => ({ ...prev, step3: 'error' }))
       }
     } catch (error) {
-      console.error("Step 2 failed:", error)
-      setStepStatus(prev => ({ ...prev, step2: 'error' }))
-      setModalError("Error during processing")
+      console.error("Step 3 failed:", error)
+      setStepStatus(prev => ({ ...prev, step3: 'error' }))
+      setModalError("Error during file processing")
     }
   }
 
@@ -425,8 +460,8 @@ const UploadLeadFile = () => {
     }
   }
 
-  const handleStep3 = () => {
-    setStepStatus(prev => ({ ...prev, step3: 'success' }))
+  const handleStep4 = () => {
+    setStepStatus(prev => ({ ...prev, step4: 'success' }))    
   }
 
 
@@ -435,7 +470,8 @@ const UploadLeadFile = () => {
     setStepStatus({
       step1: 'pending',
       step2: 'pending',
-      step3: 'pending'
+      step3: 'pending',
+      step4: 'pending'
     })
     setModalError("")
     setDownloadBlob(null)
@@ -489,6 +525,11 @@ const UploadLeadFile = () => {
       }
       if (downloadFile) {
         formData.append("download_file", JSON.stringify(downloadFile));
+      }
+
+      if (duplicateBlob) {
+        const duplicateFile = new File([duplicateBlob], duplicateFilename, { type: 'text/csv' });
+        formData.append("duplicate_file", duplicateFile);
       }
 
       const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
@@ -579,8 +620,10 @@ const UploadLeadFile = () => {
         case 1:
           return <FileCheck className="h-8 w-8" />
         case 2:
-          return <Shield className="h-8 w-8" />
+          return <Search className="h-8 w-8" />
         case 3:
+          return <Shield className="h-8 w-8" />
+        case 4:
           return <Download className="h-8 w-8" />
         default:
           return null
@@ -947,28 +990,35 @@ const UploadLeadFile = () => {
               </div>
             </div>
 
-            {/* Step 2 */}
+            {/* Step 2 - Duplicate Check */}
+            {enableDuplicateCheck && (
+              <div className="flex items-center space-x-4">
+                <StepIcon step={2} status={stepStatus.step2} />
+                <div className="flex-1">
+                  <h4 className="font-medium">Checking for Duplicates</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Checking against {duplicateCheckScope === 'system' ? 'entire system' : `list ${listId}`}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3 - Process File */}
             <div className="flex items-center space-x-4">
-              <StepIcon step={2} status={stepStatus.step2} />
+              <StepIcon step={3} status={stepStatus.step3} />
               <div className="flex-1">
                 <h4 className="font-medium">
-                  {enableDuplicateCheck 
-                    ? "Checking Duplicates & Processing" 
-                    : (skipScrubbing ? "Cleaning records" : "Cleaning through BlackList")
-                  }
+                  {skipScrubbing ? "Processing File" : "Processing & Cleaning File"}
                 </h4>
                 <p className="text-sm text-muted-foreground">
-                  {enableDuplicateCheck 
-                    ? `Checking duplicates against ${duplicateCheckScope === 'system' ? 'entire system' : `list ${listId}`} and processing file`
-                    : `Processing file and ${skipScrubbing ? "cleaning records" : "cleaning through BlackList"}`
-                  }
+                  {skipScrubbing ? "Processing your file" : "Processing file and cleaning through BlackList"}
                 </p>
               </div>
             </div>
 
-            {/* Step 3 - Download Files */}
+            {/* Step 4 - Download Files */}
             <div className="flex items-center space-x-4">
-              <StepIcon step={3} status={stepStatus.step3} />
+              <StepIcon step={4} status={stepStatus.step4} />
               <div className="flex-1">
                 <h4 className="font-medium">Download Files</h4>
                 <p className="text-sm text-muted-foreground">
@@ -977,7 +1027,7 @@ const UploadLeadFile = () => {
                     : "Download the processed file"
                   }
                 </p>
-                {currentStep === 3 && stepStatus.step2 === 'success' && (
+                {currentStep === 4 && stepStatus.step3 === 'success' && (
                   <div className="flex gap-2 mt-2">
                     <Button onClick={downloadProcessedFile} size="sm" variant="outline">
                       <Download className="h-4 w-4 mr-1" />
@@ -988,10 +1038,7 @@ const UploadLeadFile = () => {
                         <Download className="h-4 w-4 mr-1" />
                         Duplicates File
                       </Button>
-                    )}
-                    <Button onClick={handleStep3} size="sm">
-                      Close
-                    </Button>
+                    )}                    
                   </div>
                 )}
               </div>
