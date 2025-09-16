@@ -11,6 +11,15 @@ import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
 
+
+const DEFAULT_EMAILS = [
+  "glenfiddich.apayart@itsbuzzmarketing.com", 
+  "harold.bondoc@itsbuzzmarketing.com", 
+  "jessie.fernando@itsbuzzmarketing.com", 
+  "james.chavez@itsbuzzmarketing.com", 
+  "kenneth.candor@itsbuzzmarketing.com"
+]
+
 const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 
 // const UPLOAD_URL = "http://127.0.0.1:3173";
@@ -55,6 +64,8 @@ const ExternalVendorForm = () => {
       campaignName: campaignName,
       leadProviderName: leadProviderName,
       note: note || "",
+      sendToEmails: DEFAULT_EMAILS,
+      file_name: file.name,
     };
 
     formData.append("fields", JSON.stringify(fieldsData))
@@ -82,7 +93,14 @@ const ExternalVendorForm = () => {
       }
     } else {
       setSubmitError(true)
-      setResponseMessage("Something went wrong, please try again")
+
+      try{
+        responseData = await response.json()
+        const error = responseData.message
+        setResponseMessage(error)
+      }catch(error){
+        setResponseMessage("Something went wrong, please try again")
+      }
     }
 
     setIsUploading(false)
@@ -101,7 +119,7 @@ const ExternalVendorForm = () => {
               </CardTitle>
               <CardDescription>Upload lead files for external vendors</CardDescription>
             </div>
-            <Button 
+            {/* <Button 
               variant="outline" 
               onClick={() => {
                 navigate("/data-vendor-navigation/lead-uploads")
@@ -110,7 +128,7 @@ const ExternalVendorForm = () => {
             >
               <History className="h-4 w-4" />
               View Upload History
-            </Button>
+            </Button> */}
           </div>
         </CardHeader>
         <CardContent>
@@ -177,7 +195,7 @@ const ExternalVendorForm = () => {
                 <input
                   id="file"
                   type="file"
-                  accept=".csv,.xlsx,.xls,.txt"
+                  accept=".csv,.xlsx,.xls,.txt,.zip"
                   onChange={handleFileUpload}
                   className="hidden"
                   required

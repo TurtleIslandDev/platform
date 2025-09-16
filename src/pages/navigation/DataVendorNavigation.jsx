@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
+import Navbar from "../../components/navigationBar/navbar";
 
 const DataVendorNavigation = () => {
   const navigate = useNavigate();
@@ -21,8 +22,10 @@ const DataVendorNavigation = () => {
     setHoverStates((prev) => ({ ...prev, [name]: false }));
   };
   return (
-    <div className="w-full h-[calc(100vh+300px)]  flex items-center justify-center ">
-      <div className="relative  rounded-full">
+    <div className="flex flex-col h-screen">
+      <Navbar />
+      <div className="w-full h-[calc(100vh+20px)]  flex items-center justify-center flex-col mt-16">
+        <div className="relative  rounded-full">
         {/* first */}
         <div
           className={`relative flex items-center justify-center rounded-full border-2 border-dashed border-[#D9D9D9] w-[336px] h-[336px] bg-white  z-[100] `}
@@ -141,7 +144,7 @@ const DataVendorNavigation = () => {
             <div
               className="relative text-black"
               onClick={() => {
-                navigate("/data-vendor-navigation/lead-form");
+                navigate("/data-vendor-navigation/external-vendor");
               }}
             >              
                 <p className="w-[9rem] text-center uppercase font-bold text-[28px] text-white">
@@ -154,6 +157,7 @@ const DataVendorNavigation = () => {
             <div className="absolute w-[1px] h-14 transform  rotate-[10deg] -bottom-14 left-6 border-[1px] border-dashed border-[#D9D9D9]" />
             <div className="absolute w-[1px] h-4 transform  rotate-[125deg] bottom-10 -right-4 border-[1px] border-dashed border-[#D9D9D9]" />
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -114,6 +114,9 @@ const ShowUploads = lazy(() =>
 const LeadUploads = lazy(() =>
   import("./pages/dataVendorPages/LeadUploads")
 );
+const ExternalVendorForm = lazy(() =>
+  import("./pages/dataVendorPages/externalVendor")
+);
 
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
@@ -234,13 +237,17 @@ function App() {
               path="/data-vendor-navigation"
               element={<DataVendorNavigation />}
             />
-            <Route
+            <Route      
               path="/data-vendor-navigation/lead-form"
               element={<LeadFormPage />}
             />
             <Route
               path="/data-vendor-navigation/lead-uploads"
               element={<LeadUploads />}
+            />
+            <Route
+              path="/data-vendor-navigation/external-vendor"
+              element={<ExternalVendorForm />}
             />
             <Route
               path="/program-owner-navigation"
