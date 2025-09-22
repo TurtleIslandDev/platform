@@ -33,7 +33,7 @@ const LeadFormPage = () => {
   const [preferredListName, setPreferredListName] = useState("")
   const [forthCRM, setForthCRM] = useState(false)
   const [hasNameColumns, setHasNameColumns] = useState(false)
-  const [scrubbing, setScrubbing] = useState("")
+  const [scrubbing, setScrubbing] = useState("yes")
   const [sendToEmails, setSendToEmails] = useState([...DEFAULT_EMAILS])
 
   const [newEmail, setNewEmail] = useState("")
