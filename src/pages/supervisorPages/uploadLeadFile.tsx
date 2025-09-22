@@ -63,6 +63,7 @@ const UploadLeadFile = () => {
   const [listId, setListId] = useState("")
   const [sourceId, setSourceId] = useState("")
   const [skipScrubbing, setSkipScrubbing] = useState(true)
+  const [skipDncCheck, setSkipDncCheck] = useState(false)
   const [downloadFile, setDownloadFile] = useState(true)
   const [showTestMode, setShowTestMode] = useState(false)
   
@@ -208,9 +209,15 @@ const UploadLeadFile = () => {
       formData.append("mappings", JSON.stringify(fieldMappings));
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
+
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
+
+      if (skipDncCheck) {
+        formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
+      }
+
       if (downloadFile) {
         formData.append("download_file", JSON.stringify(downloadFile));
       }
@@ -251,6 +258,9 @@ const UploadLeadFile = () => {
       formData.append("source_id", sourceId || "");
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
+      }
+      if (skipDncCheck) {
+        formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
       }
       if (downloadFile) {
         formData.append("download_file", JSON.stringify(downloadFile));
@@ -296,7 +306,7 @@ const UploadLeadFile = () => {
         duplicateFormData.append("list", listId || "");
         duplicateFormData.append("source_id", sourceId || "");
         duplicateFormData.append("dup_check_scope", duplicateCheckScope);
-
+        
         const duplicateResponse = await fetch(`${UPLOAD_URL}/guides/check-duplicates`, {
           method: "POST",
           headers: {
@@ -388,6 +398,11 @@ const UploadLeadFile = () => {
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
+
+      if (skipDncCheck) {
+        formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
+      }
+
       formData.append("download_file", JSON.stringify(true));
 
       const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
@@ -501,6 +516,7 @@ const UploadLeadFile = () => {
         list: listId? listId : 8000,
         source_id: sourceId,
         skip_scrubbing: skipScrubbing,
+        skip_system_dnc: skipDncCheck,
         headers: csvHeaders,
         data: csvData,
         download_file: downloadFile,
@@ -522,6 +538,10 @@ const UploadLeadFile = () => {
 
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
+
+        if (skipDncCheck) {
+          formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
+        }
       }
       if (downloadFile) {
         formData.append("download_file", JSON.stringify(downloadFile));
@@ -758,6 +778,15 @@ const UploadLeadFile = () => {
                   onCheckedChange={(checked) => setSkipScrubbing(checked as boolean)}
                 />
                 <Label htmlFor="skip-scrubbing">Skip Scrubbing</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="skip-dnc-check"
+                  checked={skipDncCheck}
+                  onCheckedChange={(checked) => setSkipDncCheck(checked as boolean)}
+                />
+                <Label htmlFor="skip-dnc-check">Skip DNC Check</Label>
               </div>
 
               <div className="flex items-center space-x-2" >
