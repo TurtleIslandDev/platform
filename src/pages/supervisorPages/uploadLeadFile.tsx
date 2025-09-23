@@ -62,6 +62,7 @@ const UploadLeadFile = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [listId, setListId] = useState("")
   const [sourceId, setSourceId] = useState("")
+  const [campaignName, setCampaignName] = useState("")
   const [skipScrubbing, setSkipScrubbing] = useState(true)
   const [skipDncCheck, setSkipDncCheck] = useState(false)
   const [downloadFile, setDownloadFile] = useState(true)
@@ -209,6 +210,7 @@ const UploadLeadFile = () => {
       formData.append("mappings", JSON.stringify(fieldMappings));
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
+      formData.append("campaign_name", campaignName || "");
 
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
@@ -256,6 +258,7 @@ const UploadLeadFile = () => {
       formData.append("mappings", JSON.stringify(fieldMappings));
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
+      formData.append("campaign_name", campaignName || "");
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
@@ -305,6 +308,7 @@ const UploadLeadFile = () => {
         duplicateFormData.append("mappings", JSON.stringify(fieldMappings));
         duplicateFormData.append("list", listId || "");
         duplicateFormData.append("source_id", sourceId || "");
+        duplicateFormData.append("campaign_name", campaignName || "");
         duplicateFormData.append("dup_check_scope", duplicateCheckScope);
         
         const duplicateResponse = await fetch(`${UPLOAD_URL}/guides/check-duplicates`, {
@@ -374,6 +378,7 @@ const UploadLeadFile = () => {
       formData.append("mappings", JSON.stringify(fieldMappings));
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
+      formData.append("campaign_name", campaignName || "");
       formData.append("upload_file_name", uploadFileName || "csv_file.csv");
 
       // added duplicate check scope incase blob is not available and re-dedup check is needed
@@ -531,6 +536,7 @@ const UploadLeadFile = () => {
       formData.append("mappings", JSON.stringify(fieldMappings));
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
+      formData.append("campaign_name", campaignName || "");
 
       if (enableDuplicateCheck) {        
         formData.append("duplicate_check_scope", duplicateCheckScope);
@@ -768,6 +774,29 @@ const UploadLeadFile = () => {
                   value={sourceId}
                   onChange={(e) => setSourceId(e.target.value)}
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="campaign-name">Campaign Name</Label>
+                <Select
+                  value={campaignName}
+                  onValueChange={(value) => {
+                    setCampaignName(value)
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select campaign" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Press1">Press1</SelectItem>
+                    <SelectItem value="Press1A">Press1A</SelectItem>
+                    <SelectItem value="Press1B">Press1B</SelectItem>
+                    <SelectItem value="Press1C">Press1C</SelectItem>
+                    <SelectItem value="Press1D">Press1D</SelectItem>
+                    <SelectItem value="TM_Debt">TM_Debt</SelectItem>
+                    <SelectItem value="Homebound">Homebound</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center space-x-2">
