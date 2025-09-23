@@ -95,6 +95,11 @@ const UploadLeadFile = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [enableDuplicateCheck, setEnableDuplicateCheck] = useState(false)
   const [duplicateCheckScope, setDuplicateCheckScope] = useState<'system' | 'list'>('system')
+  
+  // Campaign confirmation modal state
+  const [showCampaignConfirm, setShowCampaignConfirm] = useState(false)
+  const [campaignConfirmText, setCampaignConfirmText] = useState("")
+  const [campaignConfirmError, setCampaignConfirmError] = useState("")
 
   // Filter predefined columns based on search term
   const filteredColumns = PREDEFINED_COLUMNS.filter(
@@ -500,16 +505,45 @@ const UploadLeadFile = () => {
     setDuplicateFilename("")
   }
 
+    return skipScrubbing && campaignName && campaignName.toLowerCase() !== 'data warehouse'
+  }
+
   const openModal = () => {
-    setIsModalOpen(true)
-    resetModal()
-    // Automatically start the process when modal opens
-    setTimeout(() => handleStep1(), 500)
+    if (needsCampaignConfirmation()) {
+      setShowCampaignConfirm(true)
+      setCampaignConfirmText("")
+      setCampaignConfirmError("")
+    } else {
+      setIsModalOpen(true)
+      resetModal()
+      // Automatically start the process when modal opens
+      setTimeout(() => handleStep1(), 500)
+    }
+  }
+
+  // Handle campaign confirmation
+  const handleCampaignConfirm = () => {
+    if (campaignConfirmText.trim().toLowerCase() === campaignName.toLowerCase()) {
+      setShowCampaignConfirm(false)
+      setIsModalOpen(true)
+      resetModal()
+      // Automatically start the process when modal opens
+      setTimeout(() => handleStep1(), 500)
+    } else {
+      setCampaignConfirmError("Campaign name does not match. Please retype exactly as shown.")
+    }
   }
 
   // Handle form submission
   const handleSubmit = async () => {
     if (!validateMappings()) return
+    
+    if (needsCampaignConfirmation()) {
+      setShowCampaignConfirm(true)
+      setCampaignConfirmText("")
+      setCampaignConfirmError("")
+      return
+    }
 
     setIsUploading(true)
 
@@ -1109,6 +1143,69 @@ const UploadLeadFile = () => {
                 <AlertDescription>{modalError}</AlertDescription>
               </Alert>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Campaign Confirmation Modal */}
+      <Dialog open={showCampaignConfirm} onOpenChange={setShowCampaignConfirm}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle>Confirm Campaign Selection</DialogTitle>
+            <DialogDescription>
+              You have selected "Skip Scrubbing" for campaign: <strong>{campaignName}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+              <div className="flex items-start">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 mr-3" />
+                <div>
+                  <h4 className="text-sm font-medium text-yellow-800">Important Notice</h4>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    Skipping scrubbing means your leads will not be cleaned through the BlackList. 
+                    Please confirm you want to proceed with this campaign.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="campaign-confirm" className="text-sm font-medium">
+                Please retype the campaign name to confirm: <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="campaign-confirm"
+                placeholder={`Type: ${campaignName}`}
+                value={campaignConfirmText}
+                onChange={(e) => {
+                  setCampaignConfirmText(e.target.value)
+                  setCampaignConfirmError("")
+                }}
+                className={campaignConfirmError ? "border-red-500" : ""}
+              />
+              {campaignConfirmError && (
+                <p className="text-sm text-red-600">{campaignConfirmError}</p>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => setShowCampaignConfirm(false)} 
+                variant="outline" 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCampaignConfirm}
+                className="flex-1 bg-blue-500 text-white"
+                disabled={!campaignConfirmText.trim()}
+              >
+                Confirm & Continue
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
