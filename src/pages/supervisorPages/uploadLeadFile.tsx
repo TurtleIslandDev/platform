@@ -505,6 +505,8 @@ const UploadLeadFile = () => {
     setDuplicateFilename("")
   }
 
+  // Check if campaign confirmation is needed
+  const needsCampaignConfirmation = () => {
     return skipScrubbing && campaignName && campaignName.toLowerCase() !== 'data warehouse'
   }
 
