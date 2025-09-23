@@ -29,6 +29,7 @@ const ExternalVendorForm = () => {
 
   const [campaignName, setCampaignName] = useState("TM Debt")
   const [leadProviderName, setLeadProviderName] = useState("")
+  const [affiliateId, setAffiliateId] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [responseMessage, setResponseMessage] = useState("")
   const [isUploading, setIsUploading] = useState(false)
@@ -63,6 +64,7 @@ const ExternalVendorForm = () => {
     const fieldsData = {
       campaignName: campaignName,
       leadProviderName: leadProviderName,
+      affiliateId: affiliateId,
       note: note || "",
       sendToEmails: DEFAULT_EMAILS,
       file_name: file.name,
@@ -159,6 +161,17 @@ const ExternalVendorForm = () => {
                 onChange={(e) => setLeadProviderName(e.target.value)}
                 placeholder="Enter lead provider name"
                 required
+              />
+            </div>
+
+            {/* Affiliate ID */}
+            <div className="space-y-2">
+              <Label htmlFor="affiliate-id">Affiliate ID</Label>
+              <Input
+                id="affiliate-id"
+                value={affiliateId}
+                onChange={(e) => setAffiliateId(e.target.value)}
+                placeholder="Enter affiliate ID (optional)"
               />
             </div>
 
