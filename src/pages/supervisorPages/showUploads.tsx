@@ -391,7 +391,7 @@ const ShowUploads = () => {
                                     const filename = parts[parts.length - 1]
                                     // directory is everything before the filename
                                     const directory = parts.slice(0, -1).join('/')
-                                    const url = `http://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
+                                    const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
                                     
                                     link.href = url;
                                     link.download = filename || 'download.csv';
