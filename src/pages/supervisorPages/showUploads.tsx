@@ -19,13 +19,18 @@ import {
   FileText,
   Phone,
   Shield,
-  RefreshCw
+  RefreshCw,
+  DollarSign,
+  BarChart3,
+  TrendingUp
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import Navbar from "../../components/navigationBar/navbar";
 
 const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
+// const UPLOAD_URL = "http://54.167.53.149"
+
 
 // Mock data - replace with actual API call
 const mockUploadData = [
@@ -111,14 +116,16 @@ const ShowUploads = () => {
   const [uploadData, setUploadData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [testModeFilter, setTestModeFilter] = useState<string>("all");
+  const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showTestMode, setShowTestMode] = useState(false);   
+  const [viewMode, setViewMode] = useState<"table" | "breakdown">("table");
   const { token } = useSelector((state: any) => state.user);
 
 
 
-  // Filter data based on search term and test mode
+  // Filter data based on search term, test mode, and campaign
   useEffect(() => {
     let filtered = uploadData;
 
@@ -127,16 +134,25 @@ const ShowUploads = () => {
       filtered = filtered.filter((upload: any) => upload?.data?.test_mode === testModeFilter);
     }
 
+    // Filter by campaign
+    if (campaignFilter !== "all") {
+      filtered = filtered.filter((upload: any) => {
+        const campaignName = upload?.data?.campaign_name || "__Unknown__";
+        return campaignName === campaignFilter;
+      });
+    }
+
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter((upload: any) => 
-        upload?.data?.upload_file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        upload?.data?.user_name.toLowerCase().includes(searchTerm.toLowerCase())
+        upload?.data?.upload_file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        upload?.data?.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        upload?.data?.campaign_name?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     setFilteredData(filtered);
-  }, [uploadData, testModeFilter, searchTerm]);
+  }, [uploadData, testModeFilter, campaignFilter, searchTerm]);
 
   // Fetch data from API
   const fetchUploadData = async () => {
@@ -172,14 +188,53 @@ const ShowUploads = () => {
     return new Date(timestamp).toLocaleString();
   };
 
+  // Get unique campaigns for filter
+  const getUniqueCampaigns = () => {
+    const campaigns = [...new Set(uploadData.map((upload: any) => upload?.data?.campaign_name).filter(Boolean))];
+    return campaigns.sort();
+  };
+
+  // Calculate cost based on scrub usage
+  const calculateCost = (scrubCount: number) => {
+    const costPerScrub = 3000 / 7000000; // $3,000 for 7M scrubs
+    return scrubCount * costPerScrub;
+  };
+
+  // Get monthly breakdown data
+  const getMonthlyBreakdown = () => {
+    const monthlyData: { [key: string]: { [key: string]: { scrubs: number; cost: number; uploads: number } } } = {};
+    
+    filteredData.forEach((upload: any) => {
+      const date = new Date(upload?.timestamp);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const campaign = upload?.data?.campaign_name || "__Unknown__";
+      const scrubs = upload?.data?.good_phone_count || 0;
+      
+      if (!monthlyData[monthYear]) {
+        monthlyData[monthYear] = {};
+      }
+      
+      if (!monthlyData[monthYear][campaign]) {
+        monthlyData[monthYear][campaign] = { scrubs: 0, cost: 0, uploads: 0 };
+      }
+      
+      monthlyData[monthYear][campaign].scrubs += scrubs;
+      monthlyData[monthYear][campaign].cost += calculateCost(scrubs);
+      monthlyData[monthYear][campaign].uploads += 1;
+    });
+    
+    return monthlyData;
+  };
+
   // Get total counts
   const getTotalStats = () => {
     const total = filteredData.length;
-    const totalPhones = filteredData.reduce((sum: any, upload: any) => sum + upload?.data?.good_phone_count, 0);
+    const totalPhones = filteredData.reduce((sum: any, upload: any) => sum + (upload?.data?.good_phone_count || 0), 0);
     const testModeCount = filteredData.filter((upload: any) => upload?.data?.test_mode === "true").length;
     const productionCount = filteredData.filter((upload: any) => upload?.data?.test_mode === "false").length;
+    const totalCost = filteredData.reduce((sum: any, upload: any) => sum + calculateCost(upload?.data?.good_phone_count || 0), 0);
 
-    return { total, totalPhones, testModeCount, productionCount };
+    return { total, totalPhones, testModeCount, productionCount, totalCost };
   };
 
   const stats = getTotalStats();
@@ -225,6 +280,18 @@ const ShowUploads = () => {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <DollarSign className="h-4 w-4 text-purple-500" />
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Cost</p>
+                <p className="text-2xl font-bold">${stats.totalCost.toFixed(2)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -250,6 +317,36 @@ const ShowUploads = () => {
         </Card> */}
       </div>
 
+      {/* View Mode Toggle */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            View Options
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <Button
+              variant={viewMode === "table" ? "default" : "outline"}
+              onClick={() => setViewMode("table")}
+              className="flex items-center gap-2"
+            >
+              <FileText className="h-4 w-4" />
+              Table View
+            </Button>
+            <Button
+              variant={viewMode === "breakdown" ? "default" : "outline"}
+              onClick={() => setViewMode("breakdown")}
+              className="flex items-center gap-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+              Monthly Breakdown
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader>
@@ -259,7 +356,7 @@ const ShowUploads = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {/* Search */}
             <div>
               <Label htmlFor="search">Search</Label>
@@ -267,12 +364,40 @@ const ShowUploads = () => {
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="search"
-                  placeholder="Search by filename or username..."
+                  placeholder="Search by filename, username, or campaign..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
+            </div>
+
+            {/* Campaign Filter */}
+            <div>
+              <Label>Campaign</Label>
+              <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All campaigns" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Campaigns</SelectItem>
+                  <SelectItem value="TM_Debt">TM_Debt</SelectItem>
+                  <SelectItem value="Homebound">Homebound</SelectItem>
+                  <SelectItem value="Press1">Press1</SelectItem>
+                  <SelectItem value="Press1A">Press1A</SelectItem>
+                  <SelectItem value="Press1B">Press1B</SelectItem>
+                  <SelectItem value="Press1C">Press1C</SelectItem>
+                  <SelectItem value="Press1D">Press1D</SelectItem>
+                  <SelectItem value="__Unknown__">Unknown Campaigns</SelectItem>
+                  {getUniqueCampaigns().filter(campaign => 
+                    !["TM_Debt", "Homebound", "Press1", "Press1A", "Press1B", "Press1C", "Press1D"].includes(campaign)
+                  ).map((campaign) => (
+                    <SelectItem key={campaign} value={campaign}>
+                      {campaign}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {showTestMode && (
@@ -320,129 +445,241 @@ const ShowUploads = () => {
         </CardContent>
       </Card>
 
-      {/* Data Table */}
-      <Card
-      style={{
-        width: "min-content",
-      }}
-      >
-        <CardHeader>
-          <CardTitle>Upload Records</CardTitle>
-          <CardDescription>
-            Showing {filteredData.length} of {uploadData.length} records
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {filteredData.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Loading...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Timestamp</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Filename</TableHead>
-                    <TableHead>Phone Count</TableHead>
-                    <TableHead>All Clean</TableHead>
-                    <TableHead>Carrier</TableHead>
-                    <TableHead>Federal DNC</TableHead>
-                    <TableHead>Invalid</TableHead>
-                    <TableHead>Landline</TableHead>
-                    <TableHead>No Carrier</TableHead>
-                    <TableHead>Wireless</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredData.map((upload: any, index: any) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {formatTimestamp(upload?.timestamp)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          {upload?.data?.user_name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 group relative">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="truncate max-w-[180px]" title={upload?.data?.upload_file_name}>
-                            {upload?.data?.upload_file_name}
-                          </span>
-
-                          {upload?.uploaded_filename && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 hover:bg-blue-50"
-                              title="Download file"
-                              onClick={() => {
-                                    // Create download link
-                                    const link = document.createElement('a');
-                                    const parts = upload.uploaded_filename.split('/')
-                                    const filename = parts[parts.length - 1]
-                                    // directory is everything before the filename
-                                    const directory = parts.slice(0, -1).join('/')
-                                    const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
-                                    
-                                    link.href = url;
-                                    link.download = filename || 'download.csv';
-                                    link.target = '_blank';
-                                    link.rel = 'noopener noreferrer';
-                                    
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                              }}
-                            >
-                              <Download className="h-3 w-3 text-blue-600" />
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          {upload?.data?.good_phone_count.toLocaleString()}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {upload?.data?.total_categories?.all_clean || 0}
-                      </TableCell>
-                      <TableCell>
-                        {upload?.data?.total_categories?.carrier || 0}
-                      </TableCell>
-                      <TableCell>
-                        {upload?.data?.total_categories?.federal_dnc || 0}
-                      </TableCell>
-                      <TableCell>
-                        {upload?.data?.total_categories?.invalid || 0}
-                      </TableCell>
-                      <TableCell>
-                        {upload?.data?.total_categories?.landline || 0}
-                      </TableCell>
-                      <TableCell>
-                        {upload?.data?.total_categories?.no_carrier || 0}
-                      </TableCell>
-                      <TableCell>
-                        {upload?.data?.total_categories?.wireless || 0}
-                      </TableCell>
+      {/* Data Table or Monthly Breakdown */}
+      {viewMode === "table" ? (
+        <Card
+        style={{
+          width: "min-content",
+        }}
+        >
+          <CardHeader>
+            <CardTitle>Upload Records</CardTitle>
+            <CardDescription>
+              Showing {filteredData.length} of {uploadData.length} records
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {filteredData.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Timestamp</TableHead>
+                      <TableHead>Campaign</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Filename</TableHead>
+                      <TableHead>Phone Count</TableHead>
+                      {/* <TableHead>Cost</TableHead> */}
+                      <TableHead>All Clean</TableHead>
+                      <TableHead>Carrier</TableHead>
+                      <TableHead>Federal DNC</TableHead>
+                      <TableHead>Invalid</TableHead>
+                      <TableHead>Landline</TableHead>
+                      <TableHead>No Carrier</TableHead>
+                      <TableHead>Wireless</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredData.map((upload: any, index: any) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            {formatTimestamp(upload?.timestamp)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {upload?.data?.campaign_name || "__Unknown__"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            {upload?.data?.user_name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 group relative">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate max-w-[180px]" title={upload?.data?.upload_file_name}>
+                              {upload?.data?.upload_file_name}
+                            </span>
+
+                            {upload?.uploaded_filename && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 hover:bg-blue-50"
+                                title="Download file"
+                                onClick={() => {
+                                      // Create download link
+                                      const link = document.createElement('a');
+                                      const parts = upload.uploaded_filename.split('/')
+                                      const filename = parts[parts.length - 1]
+                                      // directory is everything before the filename
+                                      const directory = parts.slice(0, -1).join('/')
+                                      const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
+                                      
+                                      link.href = url;
+                                      link.download = filename || 'download.csv';
+                                      link.target = '_blank';
+                                      link.rel = 'noopener noreferrer';
+                                      
+                                      document.body.appendChild(link);
+                                      link.click();
+                                      document.body.removeChild(link);
+                                }}
+                              >
+                                <Download className="h-3 w-3 text-blue-600" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            {(upload?.data?.good_phone_count || 0).toLocaleString()}
+                          </div>
+                        </TableCell>
+                        {/* <TableCell>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            ${calculateCost(upload?.data?.good_phone_count || 0).toFixed(2)}
+                          </div>
+                        </TableCell> */}
+                        <TableCell>
+                          {upload?.data?.total_categories?.all_clean || 0}
+                        </TableCell>
+                        <TableCell>
+                          {upload?.data?.total_categories?.carrier || 0}
+                        </TableCell>
+                        <TableCell>
+                          {upload?.data?.total_categories?.federal_dnc || 0}
+                        </TableCell>
+                        <TableCell>
+                          {upload?.data?.total_categories?.invalid || 0}
+                        </TableCell>
+                        <TableCell>
+                          {upload?.data?.total_categories?.landline || 0}
+                        </TableCell>
+                        <TableCell>
+                          {upload?.data?.total_categories?.no_carrier || 0}
+                        </TableCell>
+                        <TableCell>
+                          {upload?.data?.total_categories?.wireless || 0}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Monthly Scrub Usage Breakdown
+            </CardTitle>
+            <CardDescription>
+              Scrub usage and cost breakdown by campaign and month
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(() => {
+              const monthlyData = getMonthlyBreakdown();
+              const months = Object.keys(monthlyData).sort().reverse();
+              
+              if (months.length === 0) {
+                return (
+                  <div className="text-center py-8">
+                    <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No data available for the selected filters</p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-6">
+                  {months.map((month) => {
+                    const monthData = monthlyData[month];
+                    const campaigns = Object.keys(monthData).sort();
+                    const monthTotal = campaigns.reduce((sum, campaign) => sum + monthData[campaign].scrubs, 0);
+                    const monthCost = campaigns.reduce((sum, campaign) => sum + monthData[campaign].cost, 0);
+                    
+                    return (
+                      <div key={month} className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">
+                            {new Date(month + '-01').toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long' 
+                            })}
+                          </h3>
+                          <div className="flex gap-4 text-sm text-muted-foreground">
+                            <span>Total Scrubs: <strong className="text-foreground">{monthTotal.toLocaleString()}</strong></span>
+                            <span>Total Cost: <strong className="text-foreground">${monthCost.toFixed(2)}</strong></span>
+                          </div>
+                        </div>
+                        
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Campaign</TableHead>
+                                <TableHead>Uploads</TableHead>
+                                <TableHead>Scrub Count</TableHead>
+                                <TableHead>Estimated Cost</TableHead>
+                                <TableHead>Cost per Upload</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {campaigns.map((campaign) => {
+                                const data = monthData[campaign];
+                                return (
+                                  <TableRow key={campaign}>
+                                    <TableCell>
+                                      <Badge variant={campaign === "__Unknown__" ? "destructive" : "secondary"}>
+                                        {campaign}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell>{data.uploads}</TableCell>
+                                    <TableCell>{data.scrubs.toLocaleString()}</TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                        ${data.cost.toFixed(2)}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                        ${(data.cost / data.uploads).toFixed(2)}
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
