@@ -79,6 +79,8 @@ const Login = () => {
             navigate("/broadcast-customer-navigation");
           } else if (resData.role === "trainee") {
             navigate("/agent-trainee-navigation");
+          } else if (resData.role === "closer") {
+            navigate("/agent-navigation/dnc-form");
           }
         }
       );

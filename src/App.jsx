@@ -117,6 +117,9 @@ const LeadUploads = lazy(() =>
 const ExternalVendorForm = lazy(() =>
   import("./pages/dataVendorPages/externalVendor")
 );
+const DNCForm = lazy(() =>
+  import("./pages/agentPages/dnc-form")
+);
 
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
@@ -204,6 +207,10 @@ function App() {
             <Route
               path="/admin-navigation/upload-lead-file"
               element={<UploadLeadFile />}
+            />
+            <Route
+              path="/admin-navigation/dnc-form"
+              element={<DNCForm />}
             />
             <Route
               path="/qc-and-supervisor-navigation/buzzword-supervisor"
@@ -317,6 +324,10 @@ function App() {
             <Route
               path="/agent-navigation/learning/coaching-report-accept"
               element={<CoachingReportAccept />}
+            />
+            <Route
+              path="/agent-navigation/dnc-form"
+              element={<DNCForm />}
             />
             <Route
               path="/agent-trainee-navigation"
