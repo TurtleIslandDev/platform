@@ -18,6 +18,7 @@ import {
 } from "../../components/ui/dialog"
 import Navbar from "../../components/navigationBar/navbar"
 import { useSelector } from "react-redux"
+import { useNavigate } from "react-router-dom"
 
 const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
@@ -25,6 +26,7 @@ const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 
 const DNCForm = () => {
   const { token } = useSelector((state: any) => state.user);
+  const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -98,8 +100,15 @@ const DNCForm = () => {
     }
   }
 
+
+  if (!token || token == null) {
+    // navigate("/")
+    window.location.href = "https://platform.itsbuzzmarketing.com"
+  }
+
   return (
     <div className="w-full p-6 h-full space-y-12">
+    
       <Navbar />
       <div className="mb-8 flex flex-col items-center justify-center text-center">
         <h1 className="text-3xl font-bold flex items-center gap-2">
