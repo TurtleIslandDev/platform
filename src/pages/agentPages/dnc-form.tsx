@@ -63,6 +63,15 @@ const DNCForm = () => {
       return
     }
 
+    if (cleaned.length !== 10) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setCleanedNumber(cleaned)
     setShowConfirmation(true)
   }
