@@ -185,6 +185,11 @@ const UploadLeadFile = () => {
     
     if (!csvFile) newErrors.push("Please upload a CSV file")
 
+    // Validate campaign name is required when duplicate check is enabled
+    if (enableDuplicateCheck && !campaignName) {
+      newErrors.push("Campaign name is required when duplicate check is enabled")
+    }
+
     setErrors(newErrors)
     return newErrors.length === 0
   }
@@ -358,6 +363,7 @@ const UploadLeadFile = () => {
       // Automatically proceed to step 3
       if (enableDuplicateCheck) {
         // wait until duplicate file is generated        
+        
         setTimeout(() => handleStep3(), 3000)
       }
       else {
@@ -813,7 +819,10 @@ const UploadLeadFile = () => {
               </div>
 
               <div>
-                <Label htmlFor="campaign-name">Campaign Name</Label>
+                <Label htmlFor="campaign-name" className="flex items-center gap-1">
+                  Campaign Name
+                  {enableDuplicateCheck && <span className="text-red-500">*</span>}
+                </Label>
                 <Select
                   value={campaignName}
                   onValueChange={(value) => {
