@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/ta
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 import { 
   Upload, 
   Search, 
@@ -22,7 +23,9 @@ import {
   RefreshCw,
   DollarSign,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  Eye,
+  X
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import Navbar from "../../components/navigationBar/navbar";
@@ -112,6 +115,262 @@ const mockUploadData = [
   }
 ];
 
+const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: boolean; onClose: () => void }) => {
+  const downloadFile = (filename: string, category: string) => {
+    if (!filename) return;
+    
+    const link = document.createElement('a');
+    const parts = filename.split('/');
+    const file = parts[parts.length - 1];
+    const directory = parts.slice(0, -1).join('/');
+    const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(file)}&directory=${directory}`;
+    
+    link.href = url;
+    link.download = file || `${category}.csv`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const formatTimestamp = (timestamp: string) => {
+    return new Date(timestamp).toLocaleString();
+  };
+
+  if (!upload) return null;
+
+  const data = upload.data || {};
+  const totalCategories = data.total_categories || {};
+  const categoryFilenames = data.category_filenames || {};
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-white">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Upload Details: {data.upload_file_name || upload.filename}
+          </DialogTitle>
+          <DialogDescription>
+            Detailed breakdown of upload counts and download options
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Basic Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Basic Information</CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Upload Date</Label>
+                <p className="font-medium">{formatTimestamp(upload.timestamp)}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Username</Label>
+                <p className="font-medium">{data.user_name || "N/A"}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Campaign</Label>
+                <Badge variant="secondary">{data.campaign_name || "__Unknown__"}</Badge>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Test Mode</Label>
+                <Badge variant={data.test_mode ? "outline" : "default"}>
+                  {data.test_mode ? "Test" : "Production"}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Count Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Processing Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Original Count</p>
+                  <p className="text-2xl font-bold text-blue-600">{data.original_count || 0}</p>
+                </div>
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Good Phones</p>
+                  <p className="text-2xl font-bold text-green-600">{data.good_phone_count || 0}</p>
+                </div>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Blacklist Count</p>
+                  <p className="text-2xl font-bold text-red-600">{data.blacklist_count || 0}</p>
+                </div>
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">Duplicate Count</p>
+                  <p className="text-2xl font-bold text-orange-600">{data.duplicate_count || 0}</p>
+                </div>
+              </div>
+              {(data.system_dnc_count !== undefined && data.system_dnc_count !== null) && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">System DNC Count</p>
+                    <p className="text-2xl font-bold text-purple-600">{data.system_dnc_count || 0}</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Category Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Category Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries(totalCategories).map(([category, count]) => (
+                  <div key={category} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium capitalize">{category.replace('_', ' ')}</p>
+                      <p className="text-sm text-muted-foreground">Count: {count as number}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => downloadFile(categoryFilenames[category], category)}
+                      disabled={!categoryFilenames[category]}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* File Downloads */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">File Downloads</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {data.uploaded_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">Clean Data</p>
+                        <p className="text-sm text-muted-foreground">Main processed file</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.uploaded_filename, "clean")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
+                {data.original_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">Original File</p>
+                        <p className="text-sm text-muted-foreground">Original uploaded file</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.original_filename, "original")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
+                {data.black_list_dnc_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">Blacklist DNC</p>
+                        <p className="text-sm text-muted-foreground">Numbers on blacklist/DNC</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.black_list_dnc_filename, "blacklist_dnc")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
+                {data.invalid_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">Invalid Numbers</p>
+                        <p className="text-sm text-muted-foreground">Invalid phone numbers</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.invalid_filename, "invalid")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
+                {data.system_dnc_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">System DNC</p>
+                        <p className="text-sm text-muted-foreground">Numbers on system DNC list</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.system_dnc_filename, "system_dnc")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={onClose} variant="outline">
+            Close
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const ShowUploads = () => {
   const [uploadData, setUploadData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -121,6 +380,8 @@ const ShowUploads = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showTestMode, setShowTestMode] = useState(false);   
   const [viewMode, setViewMode] = useState<"table" | "breakdown">("table");
+  const [selectedUpload, setSelectedUpload] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { token } = useSelector((state: any) => state.user);
 
 
@@ -131,7 +392,14 @@ const ShowUploads = () => {
 
     // Filter by test mode
     if (testModeFilter !== "all") {
-      filtered = filtered.filter((upload: any) => upload?.data?.test_mode === testModeFilter);
+      filtered = filtered.filter((upload: any) => {
+        const testMode = upload?.data?.test_mode;
+        // Handle both boolean and string values for test_mode
+        if (typeof testMode === 'boolean') {
+          return testMode === (testModeFilter === "true");
+        }
+        return testMode === testModeFilter;
+      });
     }
 
     // Filter by campaign
@@ -144,11 +412,15 @@ const ShowUploads = () => {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter((upload: any) => 
-        upload?.data?.upload_file_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        upload?.data?.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        upload?.data?.campaign_name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter((upload: any) => {
+        const filename = upload?.data?.upload_file_name || upload?.filename || "";
+        const username = upload?.data?.user_name || "";
+        const campaign = upload?.data?.campaign_name || "";
+        
+        return filename.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               campaign.toLowerCase().includes(searchTerm.toLowerCase());
+      });
     }
 
     setFilteredData(filtered);
@@ -230,14 +502,40 @@ const ShowUploads = () => {
   const getTotalStats = () => {
     const total = filteredData.length;
     const totalPhones = filteredData.reduce((sum: any, upload: any) => sum + (upload?.data?.good_phone_count || 0), 0);
-    const testModeCount = filteredData.filter((upload: any) => upload?.data?.test_mode === "true").length;
-    const productionCount = filteredData.filter((upload: any) => upload?.data?.test_mode === "false").length;
+    
+    const testModeCount = filteredData.filter((upload: any) => {
+      const testMode = upload?.data?.test_mode;
+      if (typeof testMode === 'boolean') {
+        return testMode === true;
+      }
+      return testMode === "true";
+    }).length;
+    
+    const productionCount = filteredData.filter((upload: any) => {
+      const testMode = upload?.data?.test_mode;
+      if (typeof testMode === 'boolean') {
+        return testMode === false;
+      }
+      return testMode === "false";
+    }).length;
+    
     const totalCost = filteredData.reduce((sum: any, upload: any) => sum + calculateCost(upload?.data?.good_phone_count || 0), 0);
 
     return { total, totalPhones, testModeCount, productionCount, totalCost };
   };
 
   const stats = getTotalStats();
+
+  // Modal handlers
+  const handleUploadClick = (upload: any) => {
+    setSelectedUpload(upload);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedUpload(null);
+  };
 
   return (
     <div className="max-w-4xl p-6 space-y-12">
@@ -507,9 +805,13 @@ const ShowUploads = () => {
                         <TableCell>
                           <div className="flex items-center gap-2 group relative">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="truncate max-w-[180px]" title={upload?.data?.upload_file_name}>
-                              {upload?.data?.upload_file_name}
-                            </span>
+                            <button
+                              onClick={() => handleUploadClick(upload)}
+                              className="truncate max-w-[180px] text-left hover:text-blue-600 hover:underline cursor-pointer"
+                              title={`Click to view details: ${upload?.data?.upload_file_name || upload?.filename}`}
+                            >
+                              {upload?.data?.upload_file_name || upload?.filename}
+                            </button>
 
                             {upload?.uploaded_filename && (
                               <Button
@@ -517,23 +819,24 @@ const ShowUploads = () => {
                                 variant="ghost"
                                 className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-6 w-6 p-0 hover:bg-blue-50"
                                 title="Download file"
-                                onClick={() => {
-                                      // Create download link
-                                      const link = document.createElement('a');
-                                      const parts = upload.uploaded_filename.split('/')
-                                      const filename = parts[parts.length - 1]
-                                      // directory is everything before the filename
-                                      const directory = parts.slice(0, -1).join('/')
-                                      const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
-                                      
-                                      link.href = url;
-                                      link.download = filename || 'download.csv';
-                                      link.target = '_blank';
-                                      link.rel = 'noopener noreferrer';
-                                      
-                                      document.body.appendChild(link);
-                                      link.click();
-                                      document.body.removeChild(link);
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // Create download link
+                                  const link = document.createElement('a');
+                                  const parts = upload.uploaded_filename.split('/')
+                                  const filename = parts[parts.length - 1]
+                                  // directory is everything before the filename
+                                  const directory = parts.slice(0, -1).join('/')
+                                  const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
+                                  
+                                  link.href = url;
+                                  link.download = filename || 'download.csv';
+                                  link.target = '_blank';
+                                  link.rel = 'noopener noreferrer';
+                                  
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
                                 }}
                               >
                                 <Download className="h-3 w-3 text-blue-600" />
@@ -680,6 +983,13 @@ const ShowUploads = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Upload Details Modal */}
+      <UploadDetailsModal 
+        upload={selectedUpload} 
+        isOpen={isModalOpen} 
+        onClose={handleModalClose} 
+      />
     </div>
   );
 };
