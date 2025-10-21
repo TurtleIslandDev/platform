@@ -120,7 +120,15 @@ const UploadLeadFile = () => {
       const lines = text.split("\n").filter((line) => line.trim())
 
       if (lines.length > 0) {
-        const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
+        let headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
+
+        // for missing headers, add idx 
+        headers.forEach((header, idx) => {
+          if (!header) {
+            headers[idx] = `column${idx + 1}`
+          }
+        })
+
         const data = lines.slice(1).map((line) => line.split(",").map((cell) => cell.trim().replace(/"/g, "")))
 
         setCsvHeaders(headers)
@@ -1021,11 +1029,16 @@ const UploadLeadFile = () => {
                                       !Object.keys(fieldMappings).includes(header) ||
                                       fieldMappings[header] === predefinedField.id,
                                   )
-                                  .map((header) => (
-                                    <SelectItem key={header} value={header}>
-                                      {header}
-                                    </SelectItem>
-                                  ))}
+                                  .map((header, idx) => {
+                                    // const mappedHeader = header && header.trim() !== "" ? header : `column${idx + 1}`;
+                                    const mappedHeader = header;
+                                    return (
+                                      <SelectItem key={mappedHeader} value={mappedHeader}>
+                                        {mappedHeader}
+                                      </SelectItem>
+                                    );
+                                  })
+                                }
                               </SelectContent>
                             </Select>
                           )}

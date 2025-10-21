@@ -115,6 +115,7 @@ const mockUploadData = [
   }
 ];
 
+// Upload Details Modal Component
 const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: boolean; onClose: () => void }) => {
   const downloadFile = (filename: string, category: string) => {
     if (!filename) return;
@@ -177,12 +178,7 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                 <Label className="text-sm font-medium text-muted-foreground">Campaign</Label>
                 <Badge variant="secondary">{data.campaign_name || "__Unknown__"}</Badge>
               </div>
-              <div>
-                <Label className="text-sm font-medium text-muted-foreground">Test Mode</Label>
-                <Badge variant={data.test_mode ? "outline" : "default"}>
-                  {data.test_mode ? "Test" : "Production"}
-                </Badge>
-              </div>
+              
             </CardContent>
           </Card>
 
@@ -192,32 +188,97 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
               <CardTitle className="text-lg">Processing Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Original Count</p>
-                  <p className="text-2xl font-bold text-blue-600">{data.original_count || 0}</p>
-                </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Good Phones</p>
-                  <p className="text-2xl font-bold text-green-600">{data.good_phone_count || 0}</p>
-                </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Blacklist Count</p>
-                  <p className="text-2xl font-bold text-red-600">{data.blacklist_count || 0}</p>
-                </div>
-                <div className="text-center p-4 bg-orange-50 rounded-lg">
-                  <p className="text-sm text-muted-foreground">Duplicate Count</p>
-                  <p className="text-2xl font-bold text-orange-600">{data.duplicate_count || 0}</p>
-                </div>
-              </div>
-              {(data.system_dnc_count !== undefined && data.system_dnc_count !== null) && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">System DNC Count</p>
-                    <p className="text-2xl font-bold text-purple-600">{data.system_dnc_count || 0}</p>
+              {/* Main Processing Flow */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm text-muted-foreground">Original Count</p>
+                    <p className="text-3xl font-bold text-blue-600">{data.original_count || 0}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total records uploaded</p>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                    <p className="text-sm text-muted-foreground">Good Phones</p>
+                    <p className="text-3xl font-bold text-green-600">{data.good_phone_count || 0}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Valid phone numbers</p>
                   </div>
                 </div>
-              )}
+
+                {/* Excluded Records */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-muted-foreground mb-3">Excluded Records</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {(data.blacklist_count !== undefined && data.blacklist_count !== null) && (
+                      <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p className="text-xs text-muted-foreground">Blacklist</p>
+                        <p className="text-xl font-bold text-red-600">{data.blacklist_count || 0}</p>
+                      </div>
+                    )}
+                    {(data.duplicate_count !== undefined && data.duplicate_count !== null) && (
+                      <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                        <p className="text-xs text-muted-foreground">Duplicates</p>
+                        <p className="text-xl font-bold text-orange-600">{data.duplicate_count || 0}</p>
+                      </div>
+                    )}
+                    {(data.system_dnc_count !== undefined && data.system_dnc_count !== null) && (
+                      <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <p className="text-xs text-muted-foreground">System DNC</p>
+                        <p className="text-xl font-bold text-purple-600">{data.system_dnc_count || 0}</p>
+                      </div>
+                    )}
+                    {(data.file_duplicates_count !== undefined && data.file_duplicates_count !== null) && (
+                      <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p className="text-xs text-muted-foreground">File Duplicates</p>
+                        <p className="text-xl font-bold text-yellow-600">{data.file_duplicates_count || 0}</p>
+                      </div>
+                    )}
+                    {(data.invalid_count !== undefined && data.invalid_count !== null) && (
+                      <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-xs text-muted-foreground">Invalid</p>
+                        <p className="text-xl font-bold text-gray-600">{data.invalid_count || 0}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Processing Steps Summary */}
+                {(data.dataframe_count !== undefined || data.count_after_general_lead_cleaning !== undefined) && (
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium text-muted-foreground mb-3">Processing Steps</h4>
+                    <div className="space-y-2">
+                      {data.dataframe_count !== undefined && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">DataFrame Count</span>
+                          <span className="font-medium">{data.dataframe_count}</span>
+                        </div>
+                      )}
+                      {data.count_after_general_lead_cleaning !== undefined && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After General Cleaning</span>
+                          <span className="font-medium">{data.count_after_general_lead_cleaning}</span>
+                        </div>
+                      )}
+                      {data.count_after_dropping_duplicates !== undefined && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After Dropping Duplicates</span>
+                          <span className="font-medium">{data.count_after_dropping_duplicates}</span>
+                        </div>
+                      )}
+                      {data.count_after_checking_for_dnc_numbers !== undefined && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After DNC Check</span>
+                          <span className="font-medium">{data.count_after_checking_for_dnc_numbers}</span>
+                        </div>
+                      )}
+                      {data.count_after_black_list_dnc !== undefined && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After Blacklist DNC</span>
+                          <span className="font-medium">{data.count_after_black_list_dnc}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -349,6 +410,26 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                     <Button
                       size="sm"
                       onClick={() => downloadFile(data.system_dnc_filename, "system_dnc")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
+                {data.file_duplicates_name && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">File Duplicates</p>
+                        <p className="text-sm text-muted-foreground">Duplicate records within the file</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.file_duplicates_name, "file_duplicates")}
                       className="flex items-center gap-1"
                     >
                       <Download className="h-3 w-3" />
