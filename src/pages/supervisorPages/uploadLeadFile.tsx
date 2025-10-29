@@ -438,33 +438,17 @@ const UploadLeadFile = () => {
       });
 
       if (response.ok) {
-        const responseData = await response.blob()
-        
-        // Get filename from response headers or use default
-        const contentDisposition = response.headers.get('content-disposition')
-        let filename = `leads_${new Date().toISOString().split("T")[0]}`
-        
-        if (contentDisposition) {
-          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-          if (filenameMatch && filenameMatch[1]) {
-            filename = filenameMatch[1].replace(/['"]/g, '')
-          }
+        const responseData = await response.json()
+        if (responseData.status === "success") {
+          setStepStatus(prev => ({ ...prev, step3: 'success' }))
+          setCurrentStep(4)
+          // Automatically proceed to step 4
+          setTimeout(() => handleStep4(), 1000)
         }
-        
-        // Determine file extension based on content type
-        const contentType = response.headers.get('content-type')
-        if (contentType === 'application/zip') {
-          filename = filename.endsWith('.zip') ? filename : `${filename}.zip`
-        } else if (contentType === 'text/csv') {
-          filename = filename.endsWith('.csv') ? filename : `${filename}.csv`
+        else {
+          setModalError(responseData.message || "Error while processing file")
+          setStepStatus(prev => ({ ...prev, step3: 'error' }))
         }
-
-        setDownloadBlob(responseData)
-        setDownloadFilename(filename)
-        setStepStatus(prev => ({ ...prev, step3: 'success' }))
-        setCurrentStep(4)
-        // Automatically proceed to step 4
-        setTimeout(() => handleStep4(), 1000)
       } else {
         const errorData = await response.json()
         setModalError(errorData.message || "Error while processing file")
@@ -551,6 +535,7 @@ const UploadLeadFile = () => {
   }
 
   // Handle form submission
+  // old function, keep for reference
   const handleSubmit = async () => {
     if (!validateMappings()) return
     
@@ -624,41 +609,32 @@ const UploadLeadFile = () => {
           responseData = await response.json()
 
           if (responseData.status === "success") {
-            const { success_count, original_count, blacklist_count } = responseData.data
-            alert(`Upload completed successfully!\n\nSuccessfully uploaded: ${success_count} leads\nOriginal count: ${original_count} leads\nBlacklisted: ${blacklist_count} leads`)
+            // Show success message with navigation option
+            const shouldNavigate = window.confirm(
+              `Upload completed successfully!\n\nWould you like to view your uploads?`
+            )
+            
+            if (shouldNavigate) {
+              navigate("/qc-and-supervisor-navigation/show-uploads")
+            }
           } else {
             throw new Error(responseData.message || "Upload failed")
           }
         } else {
-           responseData = await response.blob()
-           
-           // Get filename from response headers or use default
-           const contentDisposition = response.headers.get('content-disposition')
-           let filename = `leads_${new Date().toISOString().split("T")[0]}`
-           
-           if (contentDisposition) {
-             const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
-             if (filenameMatch && filenameMatch[1]) {
-               filename = filenameMatch[1].replace(/['"]/g, '')
-             }
-           }
-           
-           // Determine file extension based on content type
-           const contentType = response.headers.get('content-type')
-           if (contentType === 'application/zip') {
-             filename = filename.endsWith('.zip') ? filename : `${filename}.zip`
-           } else if (contentType === 'text/csv') {
-             filename = filename.endsWith('.csv') ? filename : `${filename}.csv`
-           }
+          responseData = await response.json()
 
-           const url = window.URL.createObjectURL(responseData)
-           const a = document.createElement("a")
-           a.href = url
-           a.download = filename
-           a.click()
-           window.URL.revokeObjectURL(url)
-           
-           alert("File downloaded successfully!")
+          if (responseData.status === "success") {
+            // Show success message with navigation option
+            const shouldNavigate = window.confirm(
+              `Upload completed successfully!\n\nWould you like to view your uploads?`
+            )
+            
+            if (shouldNavigate) {
+              navigate("/qc-and-supervisor-navigation/show-uploads")
+            }
+          } else {
+            throw new Error(responseData.message || "Upload failed")
+          }
          }
       } else {
         throw new Error(response.statusText || "Upload failed")
@@ -1144,17 +1120,18 @@ const UploadLeadFile = () => {
                   }
                 </p>
                 {currentStep === 4 && stepStatus.step3 === 'success' && (
-                  <div className="flex gap-2 mt-2">
-                    <Button onClick={downloadProcessedFile} size="sm" variant="outline">
-                      <Download className="h-4 w-4 mr-1" />
-                      Processed File
+                  <div className="flex gap-2 mt-2">                   
+                    <Button 
+                      onClick={() => {
+                        setIsModalOpen(false)
+                        navigate("/qc-and-supervisor-navigation/show-uploads")
+                      }}
+                      size="sm" 
+                      className="bg-blue-500 text-white"
+                    >
+                      <List className="h-4 w-4 mr-1" />
+                      View Uploads
                     </Button>
-                    {enableDuplicateCheck && duplicateBlob && (
-                      <Button onClick={downloadDuplicatesFile} size="sm" variant="outline">
-                        <Download className="h-4 w-4 mr-1" />
-                        Duplicates File
-                      </Button>
-                    )}                    
                   </div>
                 )}
               </div>
