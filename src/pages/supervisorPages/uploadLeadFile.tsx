@@ -462,10 +462,11 @@ const UploadLeadFile = () => {
             filename = filenameMatch[1].replace(/['"]/g, '')
           }
         }
-        else {
-          setModalError(responseData.message || "Error while processing file")
-          setStepStatus(prev => ({ ...prev, step3: 'error' }))
-        }
+        setStepStatus(prev => ({ ...prev, step3: 'success' }))
+        setDownloadBlob(responseData)
+        setDownloadFilename(filename)
+        setCurrentStep(4)
+        setTimeout(() => handleStep4(), 1000)
       } else {
         const errorData = await response.json()
         setModalError(errorData.message || "Error while processing file")
