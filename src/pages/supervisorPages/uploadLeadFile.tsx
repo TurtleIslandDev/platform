@@ -449,7 +449,7 @@ const UploadLeadFile = () => {
         body: formData,
       }, 300000) as Response; // 5 minutes timeout           
 
-      if (response.ok) {
+      if (response.status === 200) {
         const responseData = await response.blob()
         
         // Get filename from response headers or use default
