@@ -447,15 +447,20 @@ const UploadLeadFile = () => {
           Authorization: `Bearer ${token}`,
         },        
         body: formData,
-      }, 300000) as Response; // 5 minutes timeout           
+      }, 300000) as Response; // 5 minutes timeout         
 
-      if (response.ok) {
-        const responseData = await response.json()
-        if (responseData.status === "success") {
-          setStepStatus(prev => ({ ...prev, step3: 'success' }))
-          setCurrentStep(4)
-          // Automatically proceed to step 4
-          setTimeout(() => handleStep4(), 1000)
+      if (response.status === 200) {
+        const responseData = await response.blob()
+        
+        // Get filename from response headers or use default
+        const contentDisposition = response.headers.get('content-disposition')
+        let filename = `leads_${new Date().toISOString().split("T")[0]}`
+        
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/)
+          if (filenameMatch && filenameMatch[1]) {
+            filename = filenameMatch[1].replace(/['"]/g, '')
+          }
         }
         else {
           setModalError(responseData.message || "Error while processing file")
