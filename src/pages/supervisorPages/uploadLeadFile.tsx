@@ -49,7 +49,8 @@ const PREDEFINED_COLUMNS = [
 ]
 
 // 
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
 // const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
@@ -429,13 +430,24 @@ const UploadLeadFile = () => {
 
       formData.append("download_file", JSON.stringify(true));
 
-      const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
+      function fetchWrapper(url, options, timeout) {
+        return new Promise((resolve, reject) => {
+          fetch(url, options).then(resolve, reject);
+    
+          if (timeout) {
+            const e = new Error("Connection timed out");
+            setTimeout(reject, timeout, e);
+          }
+        });
+      }
+
+      const response = await fetchWrapper(`${UPLOAD_URL}/guides/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-        },
+        },        
         body: formData,
-      });
+      }, 300000) as Response; // 5 minutes timeout           
 
       if (response.ok) {
         const responseData = await response.blob()
