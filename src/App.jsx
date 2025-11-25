@@ -39,6 +39,7 @@ import AgentCompensationNavigation from "./pages/agentPages/Compensation/AgentCo
 import AgentCertificationNavigation from "./pages/agentPages/Certification/AgentCertificationNavigation";
 
 import UploadLeadFile from "./pages/supervisorPages/uploadLeadFile";
+import JobProgressPage from "./pages/supervisorPages/page";
 
 const BuzzWordTrainee = lazy(() =>
   import("./pages/traineePages/BuzzWordTrainee")
@@ -110,6 +111,9 @@ const LeadFormPage = lazy(() =>
 );
 const ShowUploads = lazy(() =>
   import("./pages/supervisorPages/showUploads")
+);
+const ShowJobs = lazy(() =>
+  import("./pages/supervisorPages/showJobs")
 );
 const LeadUploads = lazy(() =>
   import("./pages/dataVendorPages/LeadUploads")
@@ -209,6 +213,10 @@ function App() {
               element={<UploadLeadFile />}
             />
             <Route
+              path="/job/:jobId"
+              element={<JobProgressPage />}
+            />
+            <Route
               path="/admin-navigation/dnc-form"
               element={<DNCForm />}
             />
@@ -299,6 +307,10 @@ function App() {
             <Route
               path="/qc-and-supervisor-navigation/show-uploads"
               element={<ShowUploads />}
+            />
+            <Route
+              path="/qc-and-supervisor-navigation/show-jobs"
+              element={<ShowJobs />}
             />
             <Route
               path="/add-user-navigation"
