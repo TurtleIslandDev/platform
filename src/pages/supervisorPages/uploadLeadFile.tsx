@@ -111,13 +111,13 @@ const UploadLeadFile = () => {
   )
 
   // Handle CSV file upload and parsing
-  const parseCsvFile = useCallback((file: File) => {
+  const parseCsvFile = useCallback(async (file: File) => {
     if (!file) return
     setCsvFile(file)
     const reader = new FileReader()
     setUploadFileName(file.name)
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const text = e.target?.result as string
       const lines = text.split("\n").filter((line) => line.trim())
 
@@ -137,11 +137,32 @@ const UploadLeadFile = () => {
         setCsvData(data)
         setFieldMappings({}) // Reset mappings when new file is uploaded
         setErrors([])
+
+        // Auto-map columns
+        try {
+          const response = await fetch(`${UPLOAD_URL}/guides/auto-map-columns`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ csv_headers: headers }),
+          })
+
+          const responseData = await response.json()
+          if (responseData.status === "success" && responseData.data?.mappings) {
+            // Auto-populate mappings
+            setFieldMappings(responseData.data.mappings)
+          }
+        } catch (error) {
+          console.error("Auto-mapping failed:", error)
+          // Continue without auto-mapping - user can still map manually
+        }
       }
     }
 
     reader.readAsText(file)
-  }, [])
+  }, [token])
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
