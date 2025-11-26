@@ -153,4 +153,3 @@ export function autoMapColumns(
 
   return mappings;
 }
-

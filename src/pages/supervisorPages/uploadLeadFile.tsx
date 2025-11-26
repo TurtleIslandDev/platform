@@ -759,9 +759,9 @@ const UploadLeadFile = () => {
   } 
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-12">
+    <div className="max-w-[95%] mx-auto p-6 pt-16 space-y-6">
       <Navbar />
-      <div className="mb-8">
+      <div className="mb-2">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold">Automated Lead Upload</h1>            
@@ -777,9 +777,11 @@ const UploadLeadFile = () => {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className={`grid gap-6 transition-all duration-500 ease-in-out ${
+        csvHeaders.length > 0 ? 'lg:grid-cols-2' : 'lg:grid-cols-1 max-w-3xl mx-auto'
+      }`}>
         {/* Left Column - Upload and Configuration */}
-        <div className="space-y-6">
+        <div className={`space-y-6 transition-all duration-500 ${csvHeaders.length > 0 ? 'opacity-100' : 'opacity-100'}`}>
           {/* File Upload */}
           <Card>
             <CardHeader>
@@ -792,7 +794,7 @@ const UploadLeadFile = () => {
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="csv-file">CSV File</Label>
+                  <Label htmlFor="csv-file" className="mb-2 block">CSV File</Label>
                   <div
                     className={`border-2 border-dashed rounded-md p-4 transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
                     onDragEnter={(e) => { e.preventDefault(); setIsDragging(true) }}
@@ -830,7 +832,7 @@ const UploadLeadFile = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="list-id">List ID *</Label>
+                <Label htmlFor="list-id" className="mb-2 block">List ID *</Label>
                 <Input
                   id="list-id"
                   placeholder="Enter list ID..."
@@ -840,7 +842,7 @@ const UploadLeadFile = () => {
               </div>
               
               <div>
-                <Label htmlFor="source-id">Source ID</Label>
+                <Label htmlFor="source-id" className="mb-2 block">Source ID</Label>
                 <Input
                   id="source-id"
                   placeholder="Enter source ID..."
@@ -850,7 +852,7 @@ const UploadLeadFile = () => {
               </div>
 
               <div>
-                <Label htmlFor="campaign-name" className="flex items-center gap-1">
+                <Label htmlFor="campaign-name" className="mb-2 block flex items-center gap-1">
                   Campaign Name
                   {enableDuplicateCheck && <span className="text-red-500">*</span>}
                 </Label>
@@ -876,7 +878,7 @@ const UploadLeadFile = () => {
               </div>
 
               <div>
-                <Label htmlFor="vendor-lead-code">Vendor Lead Code</Label>
+                <Label htmlFor="vendor-lead-code" className="mb-2 block">Vendor Lead Code</Label>
                 <Input
                   id="vendor-lead-code"
                   placeholder="Enter vendor lead code..."
@@ -981,14 +983,48 @@ const UploadLeadFile = () => {
               {isUploading ? "Uploading..." : "Upload & Process CSV"}
             </Button>
           )}
+
+          {/* Mapping Summary */}
+          {csvHeaders.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Mapping Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {PREDEFINED_COLUMNS.map((predefinedField) => {
+                    const mappedCsvField = Object.keys(fieldMappings).find(
+                      (csvField) => fieldMappings[csvField] === predefinedField.id,
+                    )
+
+                    if (!mappedCsvField) return null
+
+                    return (
+                      <div key={predefinedField.id} className="flex items-center justify-between text-sm">
+                        <Badge variant={predefinedField.required ? "default" : "secondary"}>
+                          {predefinedField.label}
+                          {predefinedField.required && <span className="ml-1">*</span>}
+                        </Badge>
+                        <span className="text-muted-foreground">←</span>
+                        <span className="font-medium">{mappedCsvField}</span>
+                      </div>
+                    )
+                  })}
+
+                  {Object.keys(fieldMappings).length === 0 && (
+                    <p className="text-muted-foreground text-sm">No mappings configured yet</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column - Field Mapping */}
-        <div className="space-y-6">
-          {csvHeaders.length > 0 && (
-            <>
-              {/* Search */}
-              <Card>
+        {csvHeaders.length > 0 && (
+          <div className="space-y-6">
+            {/* Search */}
+            <Card className="animate-in fade-in slide-in-from-right-4 duration-500">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Search className="h-5 w-5" />
@@ -996,16 +1032,20 @@ const UploadLeadFile = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Input
-                    placeholder="Search CSV columns..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+                  <div>
+                    <Label htmlFor="search-csv" className="mb-2 block">Search CSV Columns</Label>
+                    <Input
+                      id="search-csv"
+                      placeholder="Search CSV columns..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
                 </CardContent>
               </Card>
 
               {/* Field Mapping */}
-              <Card>
+              <Card className="animate-in fade-in slide-in-from-right-4 duration-500 delay-100">
                 <CardHeader>
                   <CardTitle>Field Mapping</CardTitle>
                   <CardDescription>
@@ -1081,42 +1121,8 @@ const UploadLeadFile = () => {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Mapping Summary */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Mapping Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {PREDEFINED_COLUMNS.map((predefinedField) => {
-                      const mappedCsvField = Object.keys(fieldMappings).find(
-                        (csvField) => fieldMappings[csvField] === predefinedField.id,
-                      )
-
-                      if (!mappedCsvField) return null
-
-                      return (
-                        <div key={predefinedField.id} className="flex items-center justify-between text-sm">
-                          <Badge variant={predefinedField.required ? "default" : "secondary"}>
-                            {predefinedField.label}
-                            {predefinedField.required && <span className="ml-1">*</span>}
-                          </Badge>
-                          <span className="text-muted-foreground">←</span>
-                          <span className="font-medium">{mappedCsvField}</span>
-                        </div>
-                      )
-                    })}
-
-                    {Object.keys(fieldMappings).length === 0 && (
-                      <p className="text-muted-foreground text-sm">No mappings configured yet</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Process Modal */}
