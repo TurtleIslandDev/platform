@@ -437,6 +437,26 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                     </Button>
                   </div>
                 )}
+
+                {data.duplicates_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <div>
+                        <p className="font-medium">Duplicates</p>
+                        <p className="text-sm text-muted-foreground">Duplicate records within the file</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.duplicates_filename, "duplicates")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

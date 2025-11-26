@@ -40,7 +40,7 @@ const PREDEFINED_COLUMNS = [
   { id: "security_phrase", label: "Security Phrase", required: false },
   { id: "state", label: "State", required: false },
   { id: "title", label: "Title", required: false },
-  { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
+  // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
   // { id: "rank", label: "Rank", required: false },
   // { id: "owner", label: "Owner", required: false },
   // { id: "call_type", label: "Call Type", required: false },
@@ -64,6 +64,7 @@ const UploadLeadFile = () => {
   const [listId, setListId] = useState("")
   const [sourceId, setSourceId] = useState("")
   const [campaignName, setCampaignName] = useState("")
+  const [vendorLeadCode, setVendorLeadCode] = useState("")
   const [skipScrubbing, setSkipScrubbing] = useState(true)
   const [skipDncCheck, setSkipDncCheck] = useState(false)
   const [downloadFile, setDownloadFile] = useState(true)
@@ -230,6 +231,7 @@ const UploadLeadFile = () => {
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
+      formData.append("vendor_lead_code", vendorLeadCode || "");
 
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
@@ -280,6 +282,7 @@ const UploadLeadFile = () => {
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
+      formData.append("vendor_lead_code", vendorLeadCode || "");
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
@@ -330,6 +333,7 @@ const UploadLeadFile = () => {
         duplicateFormData.append("list", listId || "");
         duplicateFormData.append("source_id", sourceId || "");
         duplicateFormData.append("campaign_name", campaignName || "");
+        duplicateFormData.append("vendor_lead_code", vendorLeadCode || "");
         duplicateFormData.append("dup_check_scope", duplicateCheckScope);
         
         const duplicateResponse = await fetch(`${UPLOAD_URL}/guides/check-duplicates`, {
@@ -401,6 +405,7 @@ const UploadLeadFile = () => {
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
+      formData.append("vendor_lead_code", vendorLeadCode || "");
       formData.append("upload_file_name", uploadFileName || "csv_file.csv");
 
       // added duplicate check scope incase blob is not available and re-dedup check is needed
@@ -686,6 +691,7 @@ const UploadLeadFile = () => {
       formData.append("list", listId || "");
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
+      formData.append("vendor_lead_code", vendorLeadCode || "");
 
       if (enableDuplicateCheck) {        
         formData.append("duplicate_check_scope", duplicateCheckScope);
@@ -960,6 +966,16 @@ const UploadLeadFile = () => {
                     <SelectItem value="Homebound">Homebound</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="vendor-lead-code">Vendor Lead Code</Label>
+                <Input
+                  id="vendor-lead-code"
+                  placeholder="Enter vendor lead code..."
+                  value={vendorLeadCode}
+                  onChange={(e) => setVendorLeadCode(e.target.value)}
+                />
               </div>
 
               <div className="flex items-center space-x-2">
