@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
+import { Checkbox } from "../../components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 import { 
@@ -480,7 +481,7 @@ const ShowUploads = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
-  const [sortOrder, setSortOrder] = useState<"most-recent" | "oldest">("most-recent");
+  const [sortByOldest, setSortByOldest] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showTestMode, setShowTestMode] = useState(false);   
   const [viewMode, setViewMode] = useState<"table" | "breakdown">("table");
@@ -531,18 +532,26 @@ const ShowUploads = () => {
     if (startDate) {
       filtered = filtered.filter((upload: any) => {
         const uploadDate = new Date(upload?.timestamp);
-        const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0); // Start of day
-        return uploadDate >= start;
+        // Extract date string in YYYY-MM-DD format 
+        const year = uploadDate.getFullYear();
+        const month = String(uploadDate.getMonth() + 1).padStart(2, '0');
+        const day = String(uploadDate.getDate()).padStart(2, '0');
+        const uploadDateStr = `${year}-${month}-${day}`;
+        // Compare date strings directly (YYYY-MM-DD format)
+        return uploadDateStr >= startDate;
       });
     }
 
     if (endDate) {
       filtered = filtered.filter((upload: any) => {
         const uploadDate = new Date(upload?.timestamp);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999); // End of day
-        return uploadDate <= end;
+        // Extract date string in YYYY-MM-DD format 
+        const year = uploadDate.getFullYear();
+        const month = String(uploadDate.getMonth() + 1).padStart(2, '0');
+        const day = String(uploadDate.getDate()).padStart(2, '0');
+        const uploadDateStr = `${year}-${month}-${day}`;
+        // Compare date strings directly (YYYY-MM-DD format)
+        return uploadDateStr <= endDate;
       });
     }
 
@@ -550,11 +559,11 @@ const ShowUploads = () => {
     const sorted = [...filtered].sort((a: any, b: any) => {
       const dateA = new Date(a?.timestamp).getTime();
       const dateB = new Date(b?.timestamp).getTime();
-      return sortOrder === "most-recent" ? dateB - dateA : dateA - dateB;
+      return sortByOldest ? dateA - dateB : dateB - dateA;
     });
 
     setFilteredData(sorted);
-  }, [uploadData, testModeFilter, campaignFilter, searchTerm, startDate, endDate, sortOrder]);
+  }, [uploadData, testModeFilter, campaignFilter, searchTerm, startDate, endDate, sortByOldest]);
 
   // Fetch data from API
   const fetchUploadData = async () => {
@@ -797,7 +806,7 @@ const ShowUploads = () => {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
             {/* Search */}
-            <div>
+            <div className="lg:col-span-2">
               <Label htmlFor="search" className="mb-2 block">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -860,26 +869,18 @@ const ShowUploads = () => {
               </div>
             </div>
 
-            {/* Sorting Buttons */}
-            <div className="lg:col-span-2">
+            {/* Sort Toggle */}
+            <div>
               <Label className="mb-2 block">Sort</Label>
-              <div className="flex gap-2">
-                <Button
-                  variant={sortOrder === "most-recent" ? "outline" : "ghost"}
-                  size="sm"
-                  onClick={() => setSortOrder("most-recent")}
-                  className="flex-1"
-                >
-                  Most Recent
-                </Button>
-                <Button
-                  variant={sortOrder === "oldest" ? "outline" : "ghost"}
-                  size="sm"
-                  onClick={() => setSortOrder("oldest")}
-                  className="flex-1"
-                >
-                  Oldest
-                </Button>
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="sort-oldest"
+                  checked={sortByOldest}
+                  onCheckedChange={(checked) => setSortByOldest(checked as boolean)}
+                />
+                <Label htmlFor="sort-oldest" className="cursor-pointer">
+                  Sort by Oldest
+                </Label>
               </div>
             </div>
 
