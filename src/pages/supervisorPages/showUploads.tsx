@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
+import { Checkbox } from "../../components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 import { 
@@ -478,6 +479,9 @@ const ShowUploads = () => {
   const [testModeFilter, setTestModeFilter] = useState<string>("all");
   const [campaignFilter, setCampaignFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [sortByOldest, setSortByOldest] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showTestMode, setShowTestMode] = useState(false);   
   const [viewMode, setViewMode] = useState<"table" | "breakdown">("table");
@@ -524,8 +528,42 @@ const ShowUploads = () => {
       });
     }
 
-    setFilteredData(filtered);
-  }, [uploadData, testModeFilter, campaignFilter, searchTerm]);
+    // Filter by date range
+    if (startDate) {
+      filtered = filtered.filter((upload: any) => {
+        const uploadDate = new Date(upload?.timestamp);
+        // Extract date string in YYYY-MM-DD format 
+        const year = uploadDate.getFullYear();
+        const month = String(uploadDate.getMonth() + 1).padStart(2, '0');
+        const day = String(uploadDate.getDate()).padStart(2, '0');
+        const uploadDateStr = `${year}-${month}-${day}`;
+        // Compare date strings directly (YYYY-MM-DD format)
+        return uploadDateStr >= startDate;
+      });
+    }
+
+    if (endDate) {
+      filtered = filtered.filter((upload: any) => {
+        const uploadDate = new Date(upload?.timestamp);
+        // Extract date string in YYYY-MM-DD format 
+        const year = uploadDate.getFullYear();
+        const month = String(uploadDate.getMonth() + 1).padStart(2, '0');
+        const day = String(uploadDate.getDate()).padStart(2, '0');
+        const uploadDateStr = `${year}-${month}-${day}`;
+        // Compare date strings directly (YYYY-MM-DD format)
+        return uploadDateStr <= endDate;
+      });
+    }
+
+    // Sort data
+    const sorted = [...filtered].sort((a: any, b: any) => {
+      const dateA = new Date(a?.timestamp).getTime();
+      const dateB = new Date(b?.timestamp).getTime();
+      return sortByOldest ? dateA - dateB : dateB - dateA;
+    });
+
+    setFilteredData(sorted);
+  }, [uploadData, testModeFilter, campaignFilter, searchTerm, startDate, endDate, sortByOldest]);
 
   // Fetch data from API
   const fetchUploadData = async () => {
@@ -639,9 +677,9 @@ const ShowUploads = () => {
   };
 
   return (
-    <div className="max-w-4xl p-6 space-y-12">
+    <div className="max-w-[95%] mx-auto p-6 pt-16 space-y-6">
       <Navbar />
-      <div className="mb-8 mx-auto">
+      <div className="mb-2 mx-auto">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <Upload className="h-8 w-8" />
           Upload History
@@ -749,16 +787,27 @@ const ShowUploads = () => {
       {/* Filters */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
+          <CardTitle className="flex items-center gap-2 justify-between">
+            <div className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters
+            </div>
+            <Button 
+              onClick={fetchUploadData} 
+              disabled={isLoading}
+              variant="ghost"
+              size="icon"
+              title="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
             {/* Search */}
-            <div>
-              <Label htmlFor="search">Search</Label>
+            <div className="lg:col-span-2">
+              <Label htmlFor="search" className="mb-2 block">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -773,7 +822,7 @@ const ShowUploads = () => {
 
             {/* Campaign Filter */}
             <div>
-              <Label>Campaign</Label>
+              <Label className="mb-2 block">Campaign</Label>
               <Select value={campaignFilter} onValueChange={setCampaignFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="All campaigns" />
@@ -797,6 +846,42 @@ const ShowUploads = () => {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Date Range Filter */}
+            <div className="lg:col-span-2">
+              <Label className="mb-2 block">Date Range</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            {/* Sort Toggle */}
+            <div>
+              <Label className="mb-2 block">Sort</Label>
+              <div className="flex items-center space-x-2 pt-2">
+                <Checkbox
+                  id="sort-oldest"
+                  checked={sortByOldest}
+                  onCheckedChange={(checked) => setSortByOldest(checked as boolean)}
+                />
+                <Label htmlFor="sort-oldest" className="cursor-pointer">
+                  Sort by Oldest
+                </Label>
+              </div>
             </div>
 
             {showTestMode && (
@@ -827,30 +912,13 @@ const ShowUploads = () => {
 
             {/* Test Mode Filter */}
             
-
-            {/* Refresh Button */}
-            <div className="flex items-end">
-              <Button 
-                onClick={fetchUploadData} 
-                disabled={isLoading}
-                variant="outline"
-                className="w-full"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                {isLoading ? "Loading..." : "Refresh"}
-              </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Data Table or Monthly Breakdown */}
       {viewMode === "table" ? (
-        <Card
-        style={{
-          width: "min-content",
-        }}
-        >
+        <Card>
           <CardHeader>
             <CardTitle>Upload Records</CardTitle>
             <CardDescription>
