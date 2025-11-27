@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useSelector } from "react-redux"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
-import { CheckCircle2, XCircle, Loader2, Download, RefreshCw, ChevronDown, ChevronUp } from "lucide-react"
+import { CheckCircle2, XCircle, Loader2, Download, RefreshCw, ChevronDown, ChevronUp, List, FileCheck, Upload } from "lucide-react"
 import { Button } from "../../components/ui/button"
 import { getHeaders } from "../../helpers/config"
+import Navbar from "../../components/navigationBar/navbar"
 
 // Backend URL configuration - matches uploadLeadFile.tsx
 // const BACKEND_URL = "https://endpoint.itsbuzzmarketing.com";
-// const BACKEND_URL = "https://app.itsbuzzmarketing.com"
-const BACKEND_URL = "http://127.0.0.1:3173";  // Local backend for testing
+const BACKEND_URL = "https://app.itsbuzzmarketing.com"
+// const BACKEND_URL = "http://127.0.0.1:3173";  // Local backend for testing
 
 interface JobUpdate {
   status: "success" | "error"
@@ -32,6 +33,7 @@ interface StepStatus {
 
 export default function JobProgressPage() {
   const params = useParams()
+  const navigate = useNavigate()
   const jobId = params.jobId as string
   const { token } = useSelector((state: { user: { token: string } }) => state.user)
   const [updates, setUpdates] = useState<JobUpdate[]>([])
@@ -44,6 +46,7 @@ export default function JobProgressPage() {
   const [isPolling, setIsPolling] = useState(true)
   const [steps, setSteps] = useState<StepStatus[]>([])
   const [currentStep, setCurrentStep] = useState<string | null>(null)
+  const [filename, setFilename] = useState<string | null>(null)
 
   // Poll for job updates every 5 seconds
   useEffect(() => {
@@ -62,21 +65,26 @@ export default function JobProgressPage() {
 
         const data = await response.json()
         
+        // Store filename if available
+        if (data.upload_file_name) {
+          setFilename(data.upload_file_name)
+        }
+        
         // Update state with new updates
         // Preserve original timestamps - match updates by content to preserve timestamps across polls
         if (data.updates && data.updates.length > 0) {
           setUpdates((prevUpdates) => {
-            // Create a map of existing updates by their content (job_id + progress + step_id) to preserve timestamps
+            // Create a map of existing updates by their content (progress + step_id) to preserve timestamps
             const existingTimestamps = new Map<string, string>()
             prevUpdates.forEach((prev) => {
-              const key = `${prev.job_id}-${prev.progress}-${prev.step_id || ''}`
+              const key = `${prev.progress}-${prev.step_id || ''}`
               if (prev.timestamp) {
                 existingTimestamps.set(key, prev.timestamp)
               }
             })
             
             return data.updates.map((update: any) => {
-              const key = `${update.job_id}-${update.progress}-${update.step_id || ''}`
+              const key = `${update.progress}-${update.step_id || ''}`
               return {
                 ...update,
                 // Preserve existing timestamp if available, otherwise use update's timestamp or generate new one
@@ -102,8 +110,8 @@ export default function JobProgressPage() {
         }
 
         if (data.has_error) {
-        setHasError(true)
-      }
+          setHasError(true)
+        }
 
         // Check if any update has final_failure flag (automatic retries exhausted)
         if (data.updates && data.updates.length > 0) {
@@ -189,33 +197,77 @@ export default function JobProgressPage() {
     return JSON.stringify(error, null, 2)
   }
 
-  // Filter updates to only show those for enabled steps
+  // Filter updates to show those for steps that exist in config
   const filteredUpdates = updates.filter((update) => {
-    // Require step_id - if missing, don't show (no backward compatibility needed)
+    // If no step_id, show it (might be general updates)
     if (!update.step_id) {
-      return false
+      return true
     }
     
-    // Check if this step is enabled
-    const step = steps.find((s) => s.id === update.step_id)
-    return step ? step.enabled : false // Only show if step exists and is enabled
+    // Show if step exists in config
+    return steps.some((s) => s.id === update.step_id)
   })
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-4xl">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-2xl font-bold">Job Progress</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">Job ID: {jobId}</p>
-              </div>
-              <Badge variant={isPolling ? "default" : "secondary"}>
-                {isPolling ? "Polling" : "Completed"}
-              </Badge>
+    <div className="max-w-[95%] mx-auto p-6 pt-16 space-y-6">
+      <Navbar />
+      <div className="mb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">Job Progress</h1>
+            <p className="text-muted-foreground mt-2">
+              Track the processing status of your upload job
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/show-jobs")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FileCheck className="h-4 w-4" />
+              View Jobs
+            </Button>
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/show-uploads")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              View Uploads
+            </Button>
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/upload-lead-file")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload CSV
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold">Job Progress</CardTitle>
+              <CardDescription className="mt-1">
+                Job ID: {jobId}
+                {filename && (
+                  <>
+                    <br />
+                    Filename: {filename}
+                  </>
+                )}
+              </CardDescription>
             </div>
-          </CardHeader>
+            <Badge variant={isPolling ? "default" : "secondary"}>
+              {isPolling ? "Polling" : "Completed"}
+            </Badge>
+          </div>
+        </CardHeader>
           <CardContent>
             {hasError && hasFinalFailure && (
               <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/20">
@@ -343,7 +395,6 @@ export default function JobProgressPage() {
             )}
           </CardContent>
         </Card>
-      </div>
     </div>
   )
 }

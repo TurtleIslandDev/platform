@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Badge } from "../../components/ui/badge";
+import { Checkbox } from "../../components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { 
   Search, 
@@ -13,7 +14,11 @@ import {
   FileText,
   RefreshCw,
   Eye,
-  Loader2
+  Loader2,
+  List,
+  Upload,
+  FileCheck,
+  Wrench
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import { getHeaders } from "../../helpers/config";
@@ -29,10 +34,13 @@ const ShowJobs = () => {
   const [jobData, setJobData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [sortByOldest, setSortByOldest] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const { token } = useSelector((state: any) => state.user);
 
-  // Filter data based on search term
+  // Filter data based on search term, date range, and sort
   useEffect(() => {
     let filtered = jobData;
 
@@ -49,8 +57,41 @@ const ShowJobs = () => {
       });
     }
 
-    setFilteredData(filtered);
-  }, [jobData, searchTerm]);
+    // Filter by date range (inclusive - compare only date portion, ignore time/timezone)
+    if (startDate) {
+      filtered = filtered.filter((job: any) => {
+        const jobDate = new Date(job?.timestamp);
+        // Extract date string in YYYY-MM-DD format (using local date components)
+        const year = jobDate.getFullYear();
+        const month = String(jobDate.getMonth() + 1).padStart(2, '0');
+        const day = String(jobDate.getDate()).padStart(2, '0');
+        const jobDateStr = `${year}-${month}-${day}`;
+        return jobDateStr >= startDate;
+      });
+    }
+
+    if (endDate) {
+      filtered = filtered.filter((job: any) => {
+        const jobDate = new Date(job?.timestamp);
+        // Extract date string in YYYY-MM-DD format (using local date components)
+        const year = jobDate.getFullYear();
+        const month = String(jobDate.getMonth() + 1).padStart(2, '0');
+        const day = String(jobDate.getDate()).padStart(2, '0');
+        const jobDateStr = `${year}-${month}-${day}`;
+        // Compare date strings directly (YYYY-MM-DD format) - inclusive
+        return jobDateStr <= endDate;
+      });
+    }
+
+    // Sort data
+    const sorted = [...filtered].sort((a: any, b: any) => {
+      const dateA = new Date(a?.timestamp).getTime();
+      const dateB = new Date(b?.timestamp).getTime();
+      return sortByOldest ? dateA - dateB : dateB - dateA;
+    });
+
+    setFilteredData(sorted);
+  }, [jobData, searchTerm, startDate, endDate, sortByOldest]);
 
   // Fetch data from API
   const fetchJobData = async () => {
@@ -109,24 +150,44 @@ const ShowJobs = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-12">
+    <div className="max-w-[95%] mx-auto p-6 pt-16 space-y-6">
       <Navbar />
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <FileText className="h-8 w-8" />
-          Job History
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          View and track queue job processing status
-        </p>
+      <div className="mb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">Job History</h1>
+            <p className="text-muted-foreground mt-2">
+              View and track queue job processing status
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/show-uploads")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              View Uploads
+            </Button>
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/upload-lead-file")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload CSV
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Statistics Card */}
-      <div className="grid gap-4 grid-cols-1 mb-6">
-        <Card>
+      {/* Statistics + Filters Row */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {/* Total Jobs Card - Compact */}
+        <Card className="md:col-span-1">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <FileText className="h-4 w-4 text-blue-500" />
+              <Wrench className="h-4 w-4 text-blue-500" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Jobs</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
@@ -134,42 +195,74 @@ const ShowJobs = () => {
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div>
-            {/* Search */}
-            <div>
-              <Label htmlFor="search">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="search"
-                  placeholder="Search by filename, username, or job ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Filters Card - Expanded */}
+        <Card className="md:col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+              {/* Search */}
+              <div className="lg:col-span-2">
+                <Label htmlFor="search" className="mb-2 block">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="search"
+                    placeholder="Search by filename, username, or job ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Date Range Filter */}
+              <div className="lg:col-span-2">
+                <Label className="mb-2 block">Date Range</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Input
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+              {/* Sort Toggle */}
+              <div>
+                <Label className="mb-2 block">Sort</Label>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Checkbox
+                    id="sort-oldest"
+                    checked={sortByOldest}
+                    onCheckedChange={(checked) => setSortByOldest(checked as boolean)}
+                  />
+                  <Label htmlFor="sort-oldest" className="cursor-pointer">
+                    Sort by Oldest
+                  </Label>
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Jobs Table */}
-      <Card
-        style={{
-          width: "min-content",
-        }}
-      >
+      <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
