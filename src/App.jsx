@@ -1,5 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { fetchWithAuth } from "./utils/fetchWithAuth";
 import AgentSystemsTraining from "./pages/agentPages/AgentSystemsTraining";
 import InteractionGuidePage from "./pages/IG/InteractionGuidePage";
 import AddUserSupervisor from "./pages/supervisorPages/AddUserSupervisor";
@@ -148,7 +151,7 @@ function App() {
 
         if (ip !== ipAddress) {
                   
-          const res = await fetch(`${AUTH_URL}/guide_auth/whitelist_ip`, {
+          const res = await fetchWithAuth(`${AUTH_URL}/guide_auth/whitelist_ip`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -516,6 +519,7 @@ function App() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      <ToastContainer />
     </>
   );
 }

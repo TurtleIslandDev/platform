@@ -46,12 +46,11 @@ const useFetch = () => {
       }
     } catch (e) {
       setLoading(false);
-      if (e.status === 401) {
-        dispatch(logout());
-      } else if (e.status !== 404) {
+      // 401 is now handled globally by axios interceptor
+      if (e.status !== 401 && e.status !== 404) {
         setError(e.data?.message);
         //notify("error", e.data?.message);
-      } else if (e.status !== 401) {
+      } else if (e.status === 404) {
         setError(e.statusText);
         //notify("error", e.statusText);
       }
@@ -94,13 +93,11 @@ const useFetch = () => {
       }
     } catch (e) {
       setLoading(false);
-      if (e.status === 401) {
-        dispatch(logout());
-      }
-      if (e.status !== 404) {
+      // 401 is now handled globally by axios interceptor
+      if (e.status !== 401 && e.status !== 404) {
         setError(e.data?.message);
         //notify("error", e.data?.message);
-      } else {
+      } else if (e.status === 404) {
         setError(e.statusText);
         //notify("error", e.statusText);
       }
@@ -143,13 +140,11 @@ const useFetch = () => {
     } catch (e) {
       setLoading(false);
       setSuccess(false);
-      if (e.status === 401) {
-        dispatch(logout());
-      }
-      if (e.status !== 404) {
+      // 401 is now handled globally by axios interceptor
+      if (e.status !== 401 && e.status !== 404) {
         setError(e.data?.message);
         //notify("error", e.data?.message);
-      } else {
+      } else if (e.status === 404) {
         setError(e.statusText);
         //notify("error", e.statusText);
       }
@@ -221,13 +216,11 @@ const useFetch = () => {
     } catch (e) {
       setLoading(false);
       setSuccess(false);
-      if (e.status === 401) {
-        dispatch(logout());
-      }
-      if (e.status !== 404) {
+      // 401 is now handled globally by axios interceptor
+      if (e.status !== 401 && e.status !== 404) {
         setError(e.data?.message);
         //notify("error", e.data?.message);
-      } else {
+      } else if (e.status === 404) {
         setError(e.statusText);
         //notify("error", e.statusText);
       }
@@ -257,13 +250,11 @@ const useFetch = () => {
     } catch (e) {
       setLoading(false);
       setSuccess(false);
-      if (e.status === 401) {
-        dispatch(logout());
-      }
-      setError(e.data?.message);
-      if (e.status !== 404) {
+      // 401 is now handled globally by axios interceptor
+      if (e.status !== 401 && e.status !== 404) {
+        setError(e.data?.message);
         //notify("error", e.data?.message);
-      } else {
+      } else if (e.status === 404) {
         setError(e.statusText);
         //notify("error", e.statusText);
       }
@@ -291,13 +282,11 @@ const useFetch = () => {
       }
     } catch (e) {
       setLoading(false);
-      if (e.status === 401) {
-        dispatch(logout());
-      }
-      if (e.status !== 404) {
+      // 401 is now handled globally by axios interceptor
+      if (e.status !== 401 && e.status !== 404) {
         setError(e.data?.message);
         //notify("error", e.data?.message);
-      } else {
+      } else if (e.status === 404) {
         setError(e.statusText);
         //notify("error", e.statusText);
       }

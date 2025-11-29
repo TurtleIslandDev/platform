@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { set, useForm } from "react-hook-form";
 import useFetch from "./../../features/hooks/useFetch";
 import { useSelector } from "react-redux";
+import { fetchWithAuth } from "../../utils/fetchWithAuth";
 const UploadDataPage = () => {
   const { token } = useSelector((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
@@ -11,7 +12,7 @@ const UploadDataPage = () => {
   const [uploadData, setUploadData] = useState([]);
   const [wait, setWait] = useState(false);
 
-  const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+  const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
   // const UPLOAD_URL = "http://127.0.0.1:3173";
   // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
@@ -27,7 +28,7 @@ const UploadDataPage = () => {
       const url = `${UPLOAD_URL}/guides/get_templates`;
 
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -57,7 +58,7 @@ const UploadDataPage = () => {
       const url = `${UPLOAD_URL}/guides/get_upload_tasks`;
 
 
-      const response = await fetch(url, {
+      const response = await fetchWithAuth(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -101,7 +102,7 @@ const UploadDataPage = () => {
 
             setWait(true);
 
-            const response = await fetch(url, {
+            const response = await fetchWithAuth(url, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${token}`,
