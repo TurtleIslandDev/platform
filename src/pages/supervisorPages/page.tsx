@@ -10,15 +10,17 @@ import Navbar from "../../components/navigationBar/navbar"
 
 // Backend URL configuration - matches uploadLeadFile.tsx
 // const BACKEND_URL = "https://endpoint.itsbuzzmarketing.com";
-const BACKEND_URL = "https://app.itsbuzzmarketing.com"
-// const BACKEND_URL = "http://127.0.0.1:3173";  // Local backend for testing
+// const BACKEND_URL = "https://app.itsbuzzmarketing.com"
+const BACKEND_URL = "http://127.0.0.1:3173";  // Local backend for testing
 
 interface JobUpdate {
-  status: "success" | "error"
+  status: "success" | "error" | "info"
   progress: string
   timestamp?: string
   error?: string | object
   step_id?: string | null
+  type?: string
+  final_failure?: boolean
 }
 
 interface StepStatus {
@@ -71,26 +73,90 @@ export default function JobProgressPage() {
         }
         
         // Update state with new updates
-        // Preserve original timestamps - match updates by content to preserve timestamps across polls
+        // Only deduplicate error retries (same step_id, multiple error attempts), show all other updates
         if (data.updates && data.updates.length > 0) {
-          setUpdates((prevUpdates) => {
-            // Create a map of existing updates by their content (progress + step_id) to preserve timestamps
-            const existingTimestamps = new Map<string, string>()
-            prevUpdates.forEach((prev) => {
-              const key = `${prev.progress}-${prev.step_id || ''}`
-              if (prev.timestamp) {
-                existingTimestamps.set(key, prev.timestamp)
-              }
+          setUpdates(() => {
+            // Find manual retry marker
+            const manualRetryMarkerIndex = data.updates.findIndex(
+              (update: any) => update.type === "manual_retry_marker"
+            )
+            
+            let processedUpdates: JobUpdate[] = []
+            
+            if (manualRetryMarkerIndex >= 0) {
+              // Manual retry happened - filter updates
+              const updatesBeforeMarker = data.updates.slice(0, manualRetryMarkerIndex)
+              const updatesAfterMarker = data.updates.slice(manualRetryMarkerIndex + 1)
+              
+              // Before marker: keep only the last successful update per step_id
+              const successByStep = new Map<string, JobUpdate>()
+              updatesBeforeMarker.forEach((update: any) => {
+                if (update.step_id && update.status === "success") {
+                  const existing = successByStep.get(update.step_id)
+                  const updateTime = update.timestamp ? new Date(update.timestamp).getTime() : 0
+                  const existingTime = existing?.timestamp ? new Date(existing.timestamp).getTime() : 0
+                  if (!existing || updateTime > existingTime) {
+                    successByStep.set(update.step_id, update as JobUpdate)
+                  }
+                }
+              })
+              
+              // Add last successful updates before marker
+              processedUpdates = Array.from(successByStep.values())
+              
+              // After marker: show all updates (only deduplicate error retries)
+              const latestErrorByStep = new Map<string, JobUpdate>()
+              const otherUpdates: JobUpdate[] = []
+              
+              updatesAfterMarker.forEach((update: any) => {
+                // Only deduplicate error retries (same step_id, multiple error attempts)
+                if (update.step_id && update.status === "error" && update.retry_attempt) {
+                  const existing = latestErrorByStep.get(update.step_id)
+                  const updateTime = update.timestamp ? new Date(update.timestamp).getTime() : 0
+                  const existingTime = existing?.timestamp ? new Date(existing.timestamp).getTime() : 0
+                  if (!existing || updateTime > existingTime) {
+                    latestErrorByStep.set(update.step_id, update as JobUpdate)
+                  }
+                } else {
+                  // Show all other updates (success, info, final failures, etc.)
+                  otherUpdates.push(update as JobUpdate)
+                }
+              })
+              
+              // Combine: all updates + latest error retry per step
+              processedUpdates.push(...otherUpdates, ...Array.from(latestErrorByStep.values()))
+            } else {
+              // No manual retry - show all updates, only deduplicate error retries
+              const latestErrorByStep = new Map<string, JobUpdate>()
+              const otherUpdates: JobUpdate[] = []
+              
+              data.updates.forEach((update: any) => {
+                // Only deduplicate error retries (same step_id, multiple error attempts)
+                if (update.step_id && update.status === "error" && update.retry_attempt) {
+                  const existing = latestErrorByStep.get(update.step_id)
+                  const updateTime = update.timestamp ? new Date(update.timestamp).getTime() : 0
+                  const existingTime = existing?.timestamp ? new Date(existing.timestamp).getTime() : 0
+                  if (!existing || updateTime > existingTime) {
+                    latestErrorByStep.set(update.step_id, update as JobUpdate)
+                  }
+                } else {
+                  // Show all other updates (success, info, final failures, etc.)
+                  otherUpdates.push(update as JobUpdate)
+                }
+              })
+              
+              // Combine: all updates + latest error retry per step
+              processedUpdates = [...otherUpdates, ...Array.from(latestErrorByStep.values())]
+            }
+            
+            // Sort by timestamp to maintain chronological order
+            processedUpdates.sort((a, b) => {
+              const timeA = a.timestamp ? new Date(a.timestamp).getTime() : 0
+              const timeB = b.timestamp ? new Date(b.timestamp).getTime() : 0
+              return timeA - timeB
             })
             
-            return data.updates.map((update: any) => {
-              const key = `${update.progress}-${update.step_id || ''}`
-              return {
-                ...update,
-                // Preserve existing timestamp if available, otherwise use update's timestamp or generate new one
-                timestamp: existingTimestamps.get(key) || update.timestamp || new Date().toISOString()
-              }
-            })
+            return processedUpdates
           })
         }
 
@@ -110,8 +176,8 @@ export default function JobProgressPage() {
         }
 
         if (data.has_error) {
-          setHasError(true)
-        }
+        setHasError(true)
+      }
 
         // Check if any update has final_failure flag (automatic retries exhausted)
         if (data.updates && data.updates.length > 0) {
@@ -198,7 +264,13 @@ export default function JobProgressPage() {
   }
 
   // Filter updates to show those for steps that exist in config
+  // Also filter out manual retry marker (it's just for internal logic)
   const filteredUpdates = updates.filter((update) => {
+    // Hide manual retry marker
+    if (update.type === "manual_retry_marker") {
+      return false
+    }
+    
     // If no step_id, show it (might be general updates)
     if (!update.step_id) {
       return true
@@ -248,11 +320,11 @@ export default function JobProgressPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl font-bold">Job Progress</CardTitle>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-2xl font-bold">Job Progress</CardTitle>
               <CardDescription className="mt-1">
                 Job ID: {jobId}
                 {filename && (
@@ -262,12 +334,12 @@ export default function JobProgressPage() {
                   </>
                 )}
               </CardDescription>
+              </div>
+              <Badge variant={isPolling ? "default" : "secondary"}>
+                {isPolling ? "Polling" : "Completed"}
+              </Badge>
             </div>
-            <Badge variant={isPolling ? "default" : "secondary"}>
-              {isPolling ? "Polling" : "Completed"}
-            </Badge>
-          </div>
-        </CardHeader>
+          </CardHeader>
           <CardContent>
             {hasError && hasFinalFailure && (
               <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900/50 dark:bg-red-950/20">
