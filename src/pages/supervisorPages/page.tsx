@@ -373,10 +373,25 @@ export default function JobProgressPage() {
                   <div>
                     <p className="font-medium text-yellow-900 dark:text-yellow-100">Retrying Automatically</p>
                     <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                      An error occurred. The system is automatically retrying with exponential backoff.
+                      An error occurred. The system is automatically retrying with exponential backoff. You can manually retry at any time.
                     </p>
                   </div>
-                  <Loader2 className="h-5 w-5 animate-spin text-yellow-600 dark:text-yellow-400" />
+                  <div className="flex items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-yellow-600 dark:text-yellow-400" />
+                    <Button onClick={handleRetry} disabled={isRetrying} variant="outline" className="ml-2">
+                      {isRetrying ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Retrying...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Retry Now
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
