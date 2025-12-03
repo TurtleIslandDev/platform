@@ -124,7 +124,9 @@ const ExternalVendorForm = lazy(() =>
 const DNCForm = lazy(() =>
   import("./pages/agentPages/dnc-form")
 );
-
+const UploadLeadFileQueue = lazy(() =>
+  import("./pages/supervisorPages/UploadLeadFileQueue")
+);  
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
 import AgentPerformanceNavigation from "./pages/agentPages/Performance/AgentPerformanceNavigation";
@@ -211,6 +213,10 @@ function App() {
             <Route
               path="/admin-navigation/upload-lead-file"
               element={<UploadLeadFile />}
+            />
+            <Route
+              path="/admin-navigation/upload-lead-file-queue"
+              element={<UploadLeadFileQueue />}
             />
             <Route
               path="/job/:jobId"
