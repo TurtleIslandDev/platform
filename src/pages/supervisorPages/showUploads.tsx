@@ -445,7 +445,7 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                       <FileText className="h-4 w-4" />
                       <div>
                         <p className="font-medium">Duplicates</p>
-                        <p className="text-sm text-muted-foreground">Duplicate records within the file</p>
+                        <p className="text-sm text-muted-foreground">Duplicate records in the system</p>
                       </div>
                     </div>
                     <Button
