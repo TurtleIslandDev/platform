@@ -42,6 +42,7 @@ import AgentCompensationNavigation from "./pages/agentPages/Compensation/AgentCo
 import AgentCertificationNavigation from "./pages/agentPages/Certification/AgentCertificationNavigation";
 
 import UploadLeadFile from "./pages/supervisorPages/uploadLeadFile";
+import JobProgressPage from "./pages/supervisorPages/page";
 
 const BuzzWordTrainee = lazy(() =>
   import("./pages/traineePages/BuzzWordTrainee")
@@ -114,6 +115,9 @@ const LeadFormPage = lazy(() =>
 const ShowUploads = lazy(() =>
   import("./pages/supervisorPages/showUploads")
 );
+const ShowJobs = lazy(() =>
+  import("./pages/supervisorPages/showJobs")
+);
 const LeadUploads = lazy(() =>
   import("./pages/dataVendorPages/LeadUploads")
 );
@@ -123,7 +127,9 @@ const ExternalVendorForm = lazy(() =>
 const DNCForm = lazy(() =>
   import("./pages/agentPages/dnc-form")
 );
-
+const UploadLeadFileQueue = lazy(() =>
+  import("./pages/supervisorPages/UploadLeadFileQueue")
+);  
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
 import AgentPerformanceNavigation from "./pages/agentPages/Performance/AgentPerformanceNavigation";
@@ -210,6 +216,14 @@ function App() {
             <Route
               path="/admin-navigation/upload-lead-file"
               element={<UploadLeadFile />}
+            />
+            <Route
+              path="/admin-navigation/upload-lead-file-queue"
+              element={<UploadLeadFileQueue />}
+            />
+            <Route
+              path="/job/:jobId"
+              element={<JobProgressPage />}
             />
             <Route
               path="/admin-navigation/dnc-form"
@@ -302,6 +316,10 @@ function App() {
             <Route
               path="/qc-and-supervisor-navigation/show-uploads"
               element={<ShowUploads />}
+            />
+            <Route
+              path="/qc-and-supervisor-navigation/show-jobs"
+              element={<ShowJobs />}
             />
             <Route
               path="/add-user-navigation"

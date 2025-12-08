@@ -26,9 +26,11 @@ import {
   BarChart3,
   TrendingUp,
   Eye,
-  X
+  X,
+  FileCheck
 } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
@@ -475,6 +477,7 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
 };
 
 const ShowUploads = () => {
+  const navigate = useNavigate();
   const [uploadData, setUploadData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [testModeFilter, setTestModeFilter] = useState<string>("all");
@@ -680,19 +683,41 @@ const ShowUploads = () => {
   return (
     <div className="max-w-[95%] mx-auto p-6 pt-16 space-y-6">
       <Navbar />
-      <div className="mb-2 mx-auto">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Upload className="h-8 w-8" />
-          Upload History
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          View and manage blacklist alliance upload records
-        </p>
+      <div className="mb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Upload className="h-8 w-8" />
+              Upload History
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              View and manage blacklist alliance upload records
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/show-jobs")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FileCheck className="h-4 w-4" />
+              View Jobs
+            </Button>
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/upload-lead-file")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Upload CSV
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Statistics Cards */}
       <div 
-      className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6"      
+      className="grid gap-4 md:grid-cols-3 mb-6"      
       >
         <Card>
           <CardContent className="p-4">
