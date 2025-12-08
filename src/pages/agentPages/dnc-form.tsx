@@ -19,8 +19,9 @@ import {
 import Navbar from "../../components/navigationBar/navbar"
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
+import { fetchWithAuth } from "../../utils/fetchWithAuth"
 
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
@@ -81,7 +82,7 @@ const DNCForm = () => {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`${UPLOAD_URL}/guides/dnc-registry-insert?phone_number=${cleanedNumber}`, {
+      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/dnc-registry-insert?phone_number=${cleanedNumber}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

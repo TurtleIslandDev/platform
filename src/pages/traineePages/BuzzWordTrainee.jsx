@@ -5,6 +5,7 @@ import TiSolutionsLogoSvg from "../../assets/SVGs/logos/TiSolutionsLogoSvg";
 import ItsBuzzMarketingLogo from "../../assets/SVGs/logos/ItsBuzzMarketingLogo";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
 const BuzzWordTrainee = () => {
   // Grid items with id and name
@@ -48,7 +49,7 @@ const BuzzWordTrainee = () => {
 
 
   // const URL = "https://endpoint.itsbuzzmarketing.com";
-  const URL = "https://endpoint.itsbuzzmarketing.com";
+  const URL = "https://app.itsbuzzmarketing.com";
   const {
     register,
     handleSubmit,
@@ -65,7 +66,7 @@ const BuzzWordTrainee = () => {
     });
   };
   const submitButtonClick = useCallback(async () => {
-    const response = await fetch(`${URL}/buzzword/submit_buzzword`, {
+    const response = await fetchWithAuth(`${URL}/buzzword/submit_buzzword`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -120,7 +121,7 @@ const BuzzWordTrainee = () => {
     const fetchGridItems = async () => {
 
       
-      const response = await fetch(`${URL}/buzzword/get_buzzword/${buzz_id}`, {
+      const response = await fetchWithAuth(`${URL}/buzzword/get_buzzword/${buzz_id}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

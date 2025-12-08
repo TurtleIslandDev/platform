@@ -46,9 +46,7 @@ const useGetAPI = () => {
       }
     } catch (e) {
       setLoading(false);
-      if (e.message=="Unauthorized") {
-        dispatch(logout())
-      }
+      // 401 is now handled globally by axios interceptor
       setError(e.message);
       //temporary commented error log
       // console.log(e.message,"checking  message------>");

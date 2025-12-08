@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const base_url = "https://auth.itsbuzzmarketing.com";
 // const auth_url = "";
@@ -42,11 +43,26 @@ const responseHandler = async (response) => {
 
 const errorHandler = (error) => {
   const { response } = error;
-  // console.log(response, "error handler");
+  
+  // Handle 401 Unauthorized errors globally
+  if (response && response.status === 401) {
+    // Show toast message
+    toast.error("Your session has expired. Please log out and log in again to reauthenticate.", {
+      position: "top-right",
+      className: "toastPosition",
+      autoClose: 5000,
+    });
+    
+    // Return a rejected promise to prevent further processing
+    return Promise.reject(error);
+  }
 
+  // For other errors, return response as before
   if (response && response?.status) {
     return response;
   }
+  
+  return Promise.reject(error);
 };
 
 //inceptors

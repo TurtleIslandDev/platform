@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import TiSolutionsLogoSvg from "../../assets/SVGs/logos/TiSolutionsLogoSvg";
 import ItsBuzzMarketingLogo from "../../assets/SVGs/logos/ItsBuzzMarketingLogo";
 import { BuzzwordIdModel } from "../../components/modals/BuzzwordIdModel";
+import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
 const BuzzWord = () => {
   const {
@@ -15,7 +16,7 @@ const BuzzWord = () => {
 
   const [readOnly, setReadOnly] = useState(false);
   const { token } = useSelector((state) => state.user);
-  const URL = "https://endpoint.itsbuzzmarketing.com";
+  const URL = "https://app.itsbuzzmarketing.com";
   // const URL = "http://localhost:3173";
   const [open, setOpen] = useState(false);
   const [buzzRes, setBuzzRes] = useState(null);
@@ -50,7 +51,7 @@ const BuzzWord = () => {
     return { id: index + 1, name: names[index] };
   });
   const onSubmit = async (data) => {
-    const response = await fetch(`${URL}/buzzword/create_new_buzzword`, {
+    const response = await fetchWithAuth(`${URL}/buzzword/create_new_buzzword`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

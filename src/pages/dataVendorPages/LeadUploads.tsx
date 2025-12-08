@@ -27,8 +27,9 @@ import {
 } from "lucide-react";
 import { useSelector } from "react-redux";
 import Navbar from "../../components/navigationBar/navbar";
+import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
 
 const LeadUploads = () => {
@@ -65,7 +66,7 @@ const LeadUploads = () => {
   const fetchUploadData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${UPLOAD_URL}/guides/get-lead-form-history`, {
+      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/get-lead-form-history`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
