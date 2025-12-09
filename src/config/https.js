@@ -42,16 +42,28 @@ const responseHandler = async (response) => {
 };
 
 const errorHandler = (error) => {
-  const { response } = error;
+  const { response, config } = error;
   
   // Handle 401 Unauthorized errors globally
   if (response && response.status === 401) {
-    // Show toast message
-    toast.error("Your session has expired. Please log out and log in again to reauthenticate.", {
-      position: "top-right",
-      className: "toastPosition",
-      autoClose: 5000,
-    });
+    // Try to get the error message from the backend response
+    const errorMessage = response.data?.message || response.data?.error || null;
+    
+    if (errorMessage) {
+      // Show the specific error message from backend
+      toast.error(errorMessage, {
+        position: "top-right",
+        className: "toastPosition",
+        autoClose: 5000,
+      });
+    } else {
+      // Fallback to generic session expired message if no specific message
+      toast.error("Your session has expired. Please log out and log in again to reauthenticate.", {
+        position: "top-right",
+        className: "toastPosition",
+        autoClose: 5000,
+      });
+    }
     
     // Return a rejected promise to prevent further processing
     return Promise.reject(error);
