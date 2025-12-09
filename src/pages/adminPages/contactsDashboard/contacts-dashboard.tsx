@@ -10,6 +10,7 @@ import { Separator } from "./ui/separator"
 import ContactsTable from "./contacts-table"
 import React from "react"
 import { useSelector } from "react-redux"
+import { fetchWithAuth } from "../../../utils/fetchWithAuth"
 
 // Define the Contact type
 interface Contact {
@@ -23,7 +24,7 @@ interface Contact {
 }
 
 // const BACKEND_URL = "http://0.0.0.0:3173"
-const BACKEND_URL = "https://endpoint.itsbuzzmarketing.com"
+const BACKEND_URL = "https://app.itsbuzzmarketing.com"
 
 
 // fetch fields from the server
@@ -33,7 +34,7 @@ const fetchFields = async ( token: string ) => {
   const headers = new Headers()
   headers.append("Authorization", `Bearer ${token}`)
 
-  const response = await fetch(`${BACKEND_URL}/guides/get_fields`, {
+  const response = await fetchWithAuth(`${BACKEND_URL}/guides/get_fields`, {
     method: "GET",
     headers: headers,          
   })
@@ -69,7 +70,7 @@ const fetchContacts = async ( fields : string[], filters : {}, token: string  ) 
 
   headers.append("Content-Type", "application/json")
 
-  const response = await fetch(`${BACKEND_URL}/guides/get_contacts`, {
+  const response = await fetchWithAuth(`${BACKEND_URL}/guides/get_contacts`, {
     method: "POST",
     headers: headers,
     body: body
@@ -188,7 +189,7 @@ export default function ContactsDashboard() {
           filters: {},
         })
 
-        const response = await fetch(`${BACKEND_URL}/guides/get_contact_csv`, {
+        const response = await fetchWithAuth(`${BACKEND_URL}/guides/get_contact_csv`, {
           method: "POST",
           headers: headers,
           body: body,

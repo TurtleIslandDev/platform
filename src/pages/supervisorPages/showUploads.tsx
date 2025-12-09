@@ -32,8 +32,9 @@ import {
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
+import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "http://54.167.53.149"
 
@@ -447,7 +448,7 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                       <FileText className="h-4 w-4" />
                       <div>
                         <p className="font-medium">Duplicates</p>
-                        <p className="text-sm text-muted-foreground">Duplicate records within the file</p>
+                        <p className="text-sm text-muted-foreground">Duplicate records in the system</p>
                       </div>
                     </div>
                     <Button
@@ -573,7 +574,7 @@ const ShowUploads = () => {
     setIsLoading(true);
     try {
       // Replace with actual API endpoint
-      const response = await fetch(`${UPLOAD_URL}/guides/get-upload-history`, {
+      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/get-upload-history`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { autoMapColumns } from "../../utils/columnMapper";
+import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
@@ -250,7 +251,7 @@ const UploadLeadFile = () => {
         formData.append("download_file", JSON.stringify(downloadFile));
       }
 
-      const response = await fetch(`${UPLOAD_URL}/guides/check-file-validity`, {
+      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/check-file-validity`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -296,7 +297,7 @@ const UploadLeadFile = () => {
         formData.append("download_file", JSON.stringify(downloadFile));
       }
 
-      const response = await fetch(`${UPLOAD_URL}/guides/check-file-validity`, {
+      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/check-file-validity`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -339,7 +340,7 @@ const UploadLeadFile = () => {
         duplicateFormData.append("vendor_lead_code", vendorLeadCode || "");
         duplicateFormData.append("dup_check_scope", duplicateCheckScope);
         
-        const duplicateResponse = await fetch(`${UPLOAD_URL}/guides/check-duplicates`, {
+        const duplicateResponse = await fetchWithAuth(`${UPLOAD_URL}/guides/check-duplicates`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -442,7 +443,7 @@ const UploadLeadFile = () => {
 
       function fetchWrapper(url, options, timeout) {
         return new Promise((resolve, reject) => {
-          fetch(url, options).then(resolve, reject);
+          fetchWithAuth(url, options).then(resolve, reject);
     
           if (timeout) {
             const e = new Error("Connection timed out");
@@ -631,7 +632,7 @@ const UploadLeadFile = () => {
         formData.append("duplicate_file", duplicateFile);
       }
 
-      const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
+      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

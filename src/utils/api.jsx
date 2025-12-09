@@ -1,3 +1,5 @@
+import { fetchWithAuth } from "./fetchWithAuth";
+
 const AUTH_URL="https://end-point.75e8s1syn0vdw.us-east-1.cs.amazonlightsail.com/guide_auth/"
 
 const API = {
@@ -15,7 +17,7 @@ const API = {
     },
     getRole : async ( token ) => {
         // Use this function to get the role of a user when needed
-        const response = await fetch(AUTH_URL+'getRole', {
+        const response = await fetchWithAuth(AUTH_URL+'getRole', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
