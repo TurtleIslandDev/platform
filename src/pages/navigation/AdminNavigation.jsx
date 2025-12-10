@@ -125,7 +125,7 @@ const AdminNavigation = () => {
           onMouseOver={(e) => handleMouseOver(e, "fourth")}
           onMouseLeave={(e) => handleMouseOut(e, "fourth")}
           onClick={() => {
-            navigate("create-template");
+            navigate("/admin-navigation/upload-lead-file-queue");
             // window.location.href =
             //   "https://vici-lp1.itsbuzzmarketing/vicidial/admin_listloader_fourth_gen.php";
           }}
@@ -143,7 +143,7 @@ const AdminNavigation = () => {
             {/* <BpoSvg /> */}
             {hoverStates.fourth ? (
               <p className="uppercase font-bold text-3xl text-center">
-                Create Template
+                Queue Upload
               </p>
             ) : (
               <svg

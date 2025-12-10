@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "../../components/ui/alert"
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
+import { fetchWithAuth } from "../../utils/fetchWithAuth"
 
 const DEFAULT_EMAILS = [
   "glenfiddich.apayart@itsbuzzmarketing.com", 
@@ -22,7 +23,7 @@ const DEFAULT_EMAILS = [
   "kenneth.candor@itsbuzzmarketing.com"
 ]
 
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
 // const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
@@ -165,7 +166,7 @@ const LeadFormPage = () => {
 
     setIsUploading(true)
 
-    const response = await fetch(`${UPLOAD_URL}/guides/uploadLeadForm`, {
+    const response = await fetchWithAuth(`${UPLOAD_URL}/guides/uploadLeadForm`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

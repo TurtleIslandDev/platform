@@ -391,7 +391,7 @@ const TraineeForm1099 = () => {
       };
 
       fetch(
-        "https://endpoint.itsbuzzmarketing.com/user/upload_document",
+        "https://app.itsbuzzmarketing.com/user/upload_document",
         requestOptions
       )
         .then((response) => response.text())

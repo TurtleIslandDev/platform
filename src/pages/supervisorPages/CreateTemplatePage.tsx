@@ -10,6 +10,7 @@ import { CSVMapper } from "../../components/CSVMapper/CSVMapper"
 import { PlusCircle, Upload } from "lucide-react"
 import { set } from "react-hook-form";
 import { useSelector } from "react-redux";
+import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
 
 // Available data types 
@@ -23,7 +24,7 @@ const dataTypes = [
 
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 // const UPLOAD_URL = "http://localhost:3173"
-const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com/"
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com/"
 
 
 export default function CreateTemplatePage() {
@@ -46,7 +47,7 @@ export default function CreateTemplatePage() {
   useEffect(() => {
 
     async function fetchFields(){
-      const response = await fetch(
+      const response = await fetchWithAuth(
         `${UPLOAD_URL}/guides/get_fields`,
         {
           method: "GET",
@@ -89,7 +90,7 @@ export default function CreateTemplatePage() {
     
     async function getSourcesTemplates(){
 
-      const response = await fetch(`${UPLOAD_URL}/guides/get_all_sources`,
+      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/get_all_sources`,
         {
           method: "GET",
           headers: {            
@@ -199,7 +200,7 @@ export default function CreateTemplatePage() {
     }
 
     // submit 
-    fetch(`${UPLOAD_URL}/guides/create_template`, {
+    fetchWithAuth(`${UPLOAD_URL}/guides/create_template`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

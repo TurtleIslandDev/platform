@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { autoMapColumns } from "../../utils/columnMapper";
-import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
@@ -52,11 +51,11 @@ const PREDEFINED_COLUMNS = [
 
 // 
 // const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
-// const UPLOAD_URL = "http://127.0.0.1:3173";
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com/testing" 
+// const UPLOAD_URL = "http://127.0.0.1:3173";  // Local backend for testing
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
-const UploadLeadFile = () => {
+const UploadLeadFileQueue = () => {
   const navigate = useNavigate();
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvHeaders, setCsvHeaders] = useState<string[]>([])
@@ -251,7 +250,7 @@ const UploadLeadFile = () => {
         formData.append("download_file", JSON.stringify(downloadFile));
       }
 
-      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/check-file-validity`, {
+      const response = await fetch(`${UPLOAD_URL}/guides/check-file-validity`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -266,7 +265,9 @@ const UploadLeadFile = () => {
     }
   }
 
-  // Modal step functions
+  // OLD: Modal step functions (kept for comparison)
+  // These were used in the old modal-based progress flow
+  /*
   const handleStep1 = async () => {
     setStepStatus(prev => ({ ...prev, step1: 'loading' }))
     setModalError("")
@@ -297,7 +298,7 @@ const UploadLeadFile = () => {
         formData.append("download_file", JSON.stringify(downloadFile));
       }
 
-      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/check-file-validity`, {
+      const response = await fetch(`${UPLOAD_URL}/guides/check-file-validity`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -339,9 +340,8 @@ const UploadLeadFile = () => {
         duplicateFormData.append("campaign_name", campaignName || "");
         duplicateFormData.append("vendor_lead_code", vendorLeadCode || "");
         duplicateFormData.append("dup_check_scope", duplicateCheckScope);
-
         
-        const duplicateResponse = await fetchWithAuth(`${UPLOAD_URL}/guides/check-duplicates`, {
+        const duplicateResponse = await fetch(`${UPLOAD_URL}/guides/check-duplicates`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -415,7 +415,6 @@ const UploadLeadFile = () => {
 
       // added duplicate check scope incase blob is not available and re-dedup check is needed
       formData.append("duplicate_check_scope", duplicateCheckScope || "");
-      formData.append("enabled_duplicate_check", JSON.stringify(enableDuplicateCheck));
       
       // add duplicate file if available
       // Ensure duplicateBlob is a Blob and duplicateFilename is set before appending
@@ -445,7 +444,7 @@ const UploadLeadFile = () => {
 
       function fetchWrapper(url, options, timeout) {
         return new Promise((resolve, reject) => {
-          fetchWithAuth(url, options).then(resolve, reject);
+          fetch(url, options).then(resolve, reject);
     
           if (timeout) {
             const e = new Error("Connection timed out");
@@ -543,12 +542,17 @@ const UploadLeadFile = () => {
     setDuplicateBlob(null)
     setDuplicateFilename("")
   }
+  */
 
   // Check if campaign confirmation is needed
   const needsCampaignConfirmation = () => {
     return skipScrubbing && campaignName && campaignName.toLowerCase() !== 'data warehouse'
   }
 
+  // OLD: Modal-based progress flow (kept for comparison)
+  // This opened a modal that showed step-by-step progress
+  // Replaced by handleSubmitQueue() which navigates to /job/{job_id} page
+  /*
   const openModal = () => {
     if (needsCampaignConfirmation()) {
       setShowCampaignConfirm(true)
@@ -561,21 +565,101 @@ const UploadLeadFile = () => {
       setTimeout(() => handleStep1(), 500)
     }
   }
+  */
 
   // Handle campaign confirmation
   const handleCampaignConfirm = () => {
     if (campaignConfirmText.trim().toLowerCase() === campaignName.toLowerCase()) {
       setShowCampaignConfirm(false)
-      setIsModalOpen(true)
-      resetModal()
-      // Automatically start the process when modal opens
-      setTimeout(() => handleStep1(), 500)
+      // Pass true to skip the confirmation check since user already confirmed
+      handleSubmitQueue(true)
     } else {
       setCampaignConfirmError("Campaign name does not match. Please retype exactly as shown.")
     }
   }
 
-  // Handle form submission
+  // NEW: Queue-based upload handler
+  const handleSubmitQueue = async (skipConfirmation = false) => {
+    if (!validateMappings()) return
+    
+    // Only check for confirmation if not already confirmed
+    if (!skipConfirmation && needsCampaignConfirmation()) {
+      setShowCampaignConfirm(true)
+      setCampaignConfirmText("")
+      setCampaignConfirmError("")
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      // Use FormData to send file + payload
+      const formData = new FormData();
+      if (csvFile) {
+        formData.append("file", csvFile);
+      }
+      formData.append("mappings", JSON.stringify(fieldMappings));
+      formData.append("list", listId || "");
+      formData.append("source_id", sourceId || "");
+      formData.append("campaign_name", campaignName || "");
+      formData.append("upload_file_name", uploadFileName || csvFile?.name || `upload_${new Date().toISOString()}.csv`);
+
+      if (enableDuplicateCheck) {        
+        formData.append("duplicate_check_scope", duplicateCheckScope);
+      }
+
+      if (skipScrubbing) {
+        formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
+
+        if (skipDncCheck) {
+          formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
+        }
+      }
+      
+      // Note: download_file is always false for queue-based processing
+      // The processed file will be available for download on the progress page
+      formData.append("download_file", JSON.stringify(false));
+
+      const response = await fetch(`${UPLOAD_URL}/guides/upload_queue`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Do NOT set Content-Type header for FormData, browser will set it including boundary
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: response.statusText || "Upload failed" }))
+        throw new Error(errorData.message || "Failed to queue file for processing")
+      }
+
+      const responseData = await response.json()
+
+      if (responseData.status === "success") {
+        const { job_id } = responseData.data
+        
+        if (!job_id) {
+          throw new Error("No job_id returned from server")
+        }
+
+        // Navigate to progress page
+        navigate(`/job/${job_id}`)
+      } else {
+        throw new Error(responseData.message || "Upload failed")
+      }
+
+    } catch (error: any) {
+      console.error("Upload failed:", error)
+      setErrors([error.message || "Upload failed. Please try again."])
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // OLD: Handle form submission (synchronous flow - kept for comparison)
+  // This was the old synchronous upload flow that showed a progress modal
+  /*
   const handleSubmit = async () => {
     if (!validateMappings()) return
     
@@ -616,7 +700,6 @@ const UploadLeadFile = () => {
 
       if (enableDuplicateCheck) {        
         formData.append("duplicate_check_scope", duplicateCheckScope);
-        formData.append("enabled_duplicate_check", JSON.stringify(enableDuplicateCheck));
       }
 
       if (skipScrubbing) {
@@ -635,7 +718,7 @@ const UploadLeadFile = () => {
         formData.append("duplicate_file", duplicateFile);
       }
 
-      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/upload`, {
+      const response = await fetch(`${UPLOAD_URL}/guides/upload`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -715,6 +798,7 @@ const UploadLeadFile = () => {
 
     }
   }
+  */
 
   // Step component
   const StepIcon = ({ step, status }: { step: number, status: 'pending' | 'loading' | 'success' | 'error' }) => {
@@ -770,6 +854,7 @@ const UploadLeadFile = () => {
           <div>
             <h1 className="text-3xl font-bold">Automated Lead Upload</h1>            
           </div>
+          <div className="flex gap-2">
           <Button 
             onClick={() => navigate("/qc-and-supervisor-navigation/show-uploads")}
             variant="outline"
@@ -778,6 +863,15 @@ const UploadLeadFile = () => {
             <List className="h-4 w-4" />
             View Uploads
           </Button>
+            <Button 
+              onClick={() => navigate("/qc-and-supervisor-navigation/show-jobs")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <FileCheck className="h-4 w-4" />
+              View Jobs
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -978,12 +1072,14 @@ const UploadLeadFile = () => {
           
 
           {/* Submit Button */}
+          {/* OLD: Used openModal for downloadFile=true and handleSubmit for downloadFile=false */}
+          {/* NEW: Both now use handleSubmitQueue which navigates to /job/{job_id} page */}
           {downloadFile ? (
-            <Button onClick={openModal} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
+            <Button onClick={() => handleSubmitQueue()} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
               Process & Download File
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
+            <Button onClick={() => handleSubmitQueue()} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
               {isUploading ? "Uploading..." : "Upload & Process CSV"}
             </Button>
           )}
@@ -1129,7 +1225,10 @@ const UploadLeadFile = () => {
         )}
       </div>
 
-      {/* Process Modal */}
+      {/* OLD: Process Modal (kept for comparison) */}
+      {/* This modal showed step-by-step progress in the old synchronous flow */}
+      {/* Replaced by /job/{job_id} page which shows real-time updates via WebSocket */}
+      {false && (
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
@@ -1140,7 +1239,6 @@ const UploadLeadFile = () => {
           </DialogHeader>
           
           <div className="space-y-6 py-4">
-            {/* Step 1 */}
             <div className="flex items-center space-x-4">
               <StepIcon step={1} status={stepStatus.step1} />
               <div className="flex-1">
@@ -1149,7 +1247,6 @@ const UploadLeadFile = () => {
               </div>
             </div>
 
-            {/* Step 2 - Duplicate Check */}
             {enableDuplicateCheck && (
               <div className="flex items-center space-x-4">
                 <StepIcon step={2} status={stepStatus.step2} />
@@ -1162,7 +1259,6 @@ const UploadLeadFile = () => {
               </div>
             )}
 
-            {/* Step 3 - Process File */}
             <div className="flex items-center space-x-4">
               <StepIcon step={3} status={stepStatus.step3} />
               <div className="flex-1">
@@ -1175,7 +1271,6 @@ const UploadLeadFile = () => {
               </div>
             </div>
 
-            {/* Step 4 - Download Files */}
             <div className="flex items-center space-x-4">
               <StepIcon step={4} status={stepStatus.step4} />
               <div className="flex-1">
@@ -1188,12 +1283,12 @@ const UploadLeadFile = () => {
                 </p>
                 {currentStep === 4 && stepStatus.step3 === 'success' && (
                   <div className="flex gap-2 mt-2">
-                    <Button onClick={downloadProcessedFile} size="sm" variant="outline">
+                    <Button onClick={() => {}} size="sm" variant="outline">
                       <Download className="h-4 w-4 mr-1" />
                       Processed File
                     </Button>
                     {enableDuplicateCheck && duplicateBlob && (
-                      <Button onClick={downloadDuplicatesFile} size="sm" variant="outline">
+                      <Button onClick={() => {}} size="sm" variant="outline">
                         <Download className="h-4 w-4 mr-1" />
                         Duplicates File
                       </Button>
@@ -1203,7 +1298,6 @@ const UploadLeadFile = () => {
               </div>
             </div>
 
-            {/* Error Display */}
             {modalError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
@@ -1213,6 +1307,7 @@ const UploadLeadFile = () => {
           </div>
         </DialogContent>
       </Dialog>
+      )}
 
       {/* Campaign Confirmation Modal */}
       <Dialog open={showCampaignConfirm} onOpenChange={setShowCampaignConfirm}>
@@ -1280,4 +1375,4 @@ const UploadLeadFile = () => {
   )
 }
 
-export default UploadLeadFile;
+export default UploadLeadFileQueue;
