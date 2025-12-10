@@ -338,6 +338,7 @@ const UploadLeadFile = () => {
         duplicateFormData.append("campaign_name", campaignName || "");
         duplicateFormData.append("vendor_lead_code", vendorLeadCode || "");
         duplicateFormData.append("dup_check_scope", duplicateCheckScope);
+
         
         const duplicateResponse = await fetch(`${UPLOAD_URL}/guides/check-duplicates`, {
           method: "POST",
@@ -413,6 +414,7 @@ const UploadLeadFile = () => {
 
       // added duplicate check scope incase blob is not available and re-dedup check is needed
       formData.append("duplicate_check_scope", duplicateCheckScope || "");
+      formData.append("enabled_duplicate_check", JSON.stringify(enableDuplicateCheck));
       
       // add duplicate file if available
       // Ensure duplicateBlob is a Blob and duplicateFilename is set before appending
@@ -613,6 +615,7 @@ const UploadLeadFile = () => {
 
       if (enableDuplicateCheck) {        
         formData.append("duplicate_check_scope", duplicateCheckScope);
+        formData.append("enabled_duplicate_check", JSON.stringify(enableDuplicateCheck));
       }
 
       if (skipScrubbing) {

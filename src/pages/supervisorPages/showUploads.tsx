@@ -177,7 +177,15 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Campaign</Label>
-                <Badge variant="secondary">{data.campaign_name || "__Unknown__"}</Badge>
+                <p className="font-medium">{data.campaign_name || "__Unknown__"}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Duplicate Check Scope</Label>
+                <p className="font-medium">{data.dup_check_scope || "N/A"}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">List ID</Label>
+                <p className="font-medium">{data.list_id || "N/A"}</p>
               </div>
               
             </CardContent>
@@ -214,9 +222,9 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                         <p className="text-xl font-bold text-red-600">{data.blacklist_count || 0}</p>
                       </div>
                     )}
-                    {(data.duplicate_count !== undefined && data.duplicate_count !== null) && (
+                    {data.duplicate_count != null && (
                       <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
-                        <p className="text-xs text-muted-foreground">Duplicates</p>
+                        <p className="text-xs text-muted-foreground">Duplicates  {data.dup_check_scope? `|| ${data.dup_check_scope}` : ''}</p>
                         <p className="text-xl font-bold text-orange-600">{data.duplicate_count || 0}</p>
                       </div>
                     )}
@@ -444,8 +452,8 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                     <div className="flex items-center gap-2">
                       <FileText className="h-4 w-4" />
                       <div>
-                        <p className="font-medium">Duplicates</p>
-                        <p className="text-sm text-muted-foreground">Duplicate records in the system</p>
+                        <p className="font-medium">Duplicates {data.dup_check_scope? `|| ${data.dup_check_scope}` : ''}</p>
+                        <p className="text-sm text-muted-foreground">Duplicate records in the {}</p>
                       </div>
                     </div>
                     <Button
