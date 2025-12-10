@@ -128,7 +128,7 @@ const DNCForm = lazy(() =>
   import("./pages/agentPages/dnc-form")
 );
 const UploadLeadFileQueue = lazy(() =>
-  import("./pages/supervisorPages/UploadLeadFileQueue")
+  import("./pages/supervisorPages/uploadLeadFileQueue.tsx")
 );  
 const Login = lazy(() => import("./pages/auth/Login"));
 const AddUser = lazy(() => import("./pages/auth/AddUser"));
