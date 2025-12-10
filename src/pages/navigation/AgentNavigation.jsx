@@ -18,8 +18,14 @@ const AgentNavigation = () => {
   const navigate = useNavigate();
   const { ipAddress, username, token } = useSelector((state) => state.user);
   const [wait, setWait] = useState(false);
+  const [showViciDialog, setShowViciDialog] = useState(false);
   const dispatch = useDispatch();
   const AUTH_URL = "https://auth.itsbuzzmarketing.com";
+
+  const VICI_URLS = {
+    classic: "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php",
+    new: "https://vici-lp1.itsbuzzmarketing.com/dialer/"
+  };
 
   const [hoverStates, setHoverStates] = useState({
     sixth: false,
@@ -39,9 +45,86 @@ const AgentNavigation = () => {
     setHoverStates((prev) => ({ ...prev, [name]: false }));
   };
 
+  const redirectToVici = (version) => {
+    const viciUrl = VICI_URLS[version];
+    
+    const updateIPAddress = async () => {
+      const response = await fetch("https://api.ipify.org?format=json");
+      const resData = await response.json();
+      if (resData.ip) {
+        const ip = resData.ip;
+        
+        if (ip !== ipAddress) {
+          const res = await fetch(`${AUTH_URL}/guide_auth/whitelist_ip`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              ip: ip,
+              username: username,
+            }),
+          });
+  
+          if (res.status === 200) {
+            dispatch(setIpAddress(ip));
+            setTimeout(() => {
+              window.location.href = viciUrl;
+            }, 10000);
+            setWait(true);
+          }
+        } else {
+          window.location.href = viciUrl;
+        }
+      }
+    };
+
+    if (ipAddress !== null && username !== null) {
+      updateIPAddress();
+    } else {
+      window.location.href = viciUrl;
+    }
+  };
+
 
   return (
     <>
+    {/* VICI Version Selection Dialog */}
+    {showViciDialog && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200]">
+        <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full mx-4">
+          <h2 className="text-2xl font-bold mb-4 text-gray-800">Choose VICI Version</h2>
+          <p className="text-gray-600 mb-6">Please select which VICI version you'd like to use:</p>
+          <div className="flex flex-col gap-4">
+            <button
+              onClick={() => {
+                setShowViciDialog(false);
+                redirectToVici('classic');
+              }}
+              className="px-6 py-4 bg-[#333] text-white rounded-lg font-semibold text-lg hover:bg-[#444] transition-colors"
+            >
+              Classic VICI
+            </button>
+            <button
+              onClick={() => {
+                setShowViciDialog(false);
+                redirectToVici('new');
+              }}
+              className="px-6 py-4 bg-[#333] text-white rounded-lg font-semibold text-lg hover:bg-[#444] transition-colors"
+            >
+              New VICI
+            </button>
+            <button
+              onClick={() => setShowViciDialog(false)}
+              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors mt-2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     {wait ? (
       <div className="text-center mb-40">
         <h1 className="font-semibold text-2xl">
@@ -63,59 +146,7 @@ const AgentNavigation = () => {
         >
           <div
             onClick={() => {
-
-              const updateIPAddress = async () => {
-
-
-                const response = await fetch("https://api.ipify.org?format=json");
-                const resData = await response.json();
-                if (resData.ip) {
-          
-                  const ip = resData.ip;
-          
-                  if (ip !== ipAddress) {
-                            
-                    const res = await fetch(`${AUTH_URL}/guide_auth/whitelist_ip`, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({
-                        ip: ip,
-                        username: username,
-                      }),
-                    });
-          
-                    if (res.status === 200) {
-                      dispatch(setIpAddress(ip));
-
-                      setTimeout(() => {
-                        window.location.href =
-                          "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
-                      }, 10000);
-
-                      setWait(true);
-                    }
-          
-                  } else {
-                    window.location.href =
-                      "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
-                  }
-                }
-              }
-          
-              if (ipAddress !== null && username !== null) {
-                updateIPAddress();                
-              }
-              else {
-                window.location.href =
-                  "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
-              }
-
-
-
-
+              setShowViciDialog(true);
             }}
             onMouseOver={(e) => handleMouseOver(e, "agentGUI")}
             onMouseLeave={(e) => handleMouseOut(e, "agentGUI")}
