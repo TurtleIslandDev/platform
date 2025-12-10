@@ -214,6 +214,7 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                     <p className="text-xs text-muted-foreground mt-1">Valid phone numbers</p>
                   </div>
                 </div>
+                
 
                 {/* Excluded Records */}
                 <div className="border-t pt-4">
