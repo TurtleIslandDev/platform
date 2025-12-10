@@ -24,7 +24,7 @@ const AgentNavigation = () => {
 
   const VICI_URLS = {
     classic: "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php",
-    new: "https://vici-lp1.itsbuzzmarketing.com/dialer/"
+    new: "https://vici-lp1.itsbuzzmarketing.com/agent/"
   };
 
   const [hoverStates, setHoverStates] = useState({
