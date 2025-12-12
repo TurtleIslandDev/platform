@@ -1,209 +1,187 @@
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  Typography,
-  Menu,
-  MenuHandler,
-  Button,
-  MenuList,
-  MenuItem,
-  IconButton,
-} from "@material-tailwind/react";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+import { Search, UserPlus, Edit, KeyRound, Loader2 } from "lucide-react";
 import { useDispatch } from "react-redux";
 import { setTobeEdited } from "../../features/slice/userSlice";
 import useFetch from "../../features/hooks/useFetch";
 import { EditUser } from "../../components/modals/EditUser";
-import { data } from "autoprefixer";
 import { ResetPassword } from "../../components/modals/ResetPassword";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../../components/navigationBar/navbar";
 
-const TABLE_HEAD = [
-  "Username",
-  "First Name",
-  "Last Name",
-  "Company",
-  "Role",
-  "Actions",
-];
-
-const TABLE_ROWS = [
-  {
-    name: "John Michael",
-    job: "Manager",
-    date: "23/04/18",
-  },
-  {
-    name: "Alexa Liras",
-    job: "Developer",
-    date: "23/04/18",
-  },
-  {
-    name: "Laurent Perrier",
-    job: "Executive",
-    date: "19/09/17",
-  },
-  {
-    name: "Michael Levi",
-    job: "Developer",
-    date: "24/12/08",
-  },
-  {
-    name: "Richard Gran",
-    job: "Manager",
-    date: "04/10/21",
-  },
-];
 const Roster = () => {
   const [allUsers, setAllUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [open, setOpen] = useState(false);
-
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { fetchData, loading } = useFetch();
+
   useEffect(() => {
     fetchData("/guide_auth/getAllUsers", undefined, (res) => {
       setAllUsers(res?.data);
     });
   }, []);
+
+  // Filter users based on search term (username)
+  const filteredUsers = allUsers.filter((user) => {
+    if (!user) return false;
+    if (!searchTerm.trim()) return true;
+    return user.username?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
+
   return (
-    <div className="px-6">
+    <div className="max-w-[95%] mx-auto p-6 pt-16 space-y-6">
+      <Navbar />
+      
       <EditUser open={open} setOpen={setOpen} />
       <ResetPassword open={resetPasswordOpen} setOpen={setResetPasswordOpen} />
 
-      <div className="w-full mb-5">
-        <p className="text-2xl text-[#222] mb-2">Search Users</p>
-        <label className="input input-bordered flex items-center gap-2 ">
-          <input
-            // {...register("username", { required: true })}
-            type="text"
-            className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-            placeholder="username"
-          />
-          <button
-            className="bg-[#1E40AF] text-white h-full p-4 rounded-lg"
-            onClick={() => {
-              navigate("/admin-navigation/add-user");
-            }}
-          >
-            Add User
-          </button>
-        </label>
-      </div>
-      {loading ? (
-        <>Loading Users</>
-      ) : (
-        <Card className="h-full w-full overflow-scroll">
-          <table className="w-full min-w-max table-auto text-left">
-            <thead>
-              <tr>
-                {TABLE_HEAD.map((head) => (
-                  <th
-                    key={head}
-                    className="border-b border-blue-gray-100 bg-blue-gray-50 p-4"
-                  >
-                    <Typography
-                      variant="small"
-                      color="blue-gray"
-                      className="font-normal leading-none opacity-70"
-                    >
-                      {head}
-                    </Typography>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {allUsers?.map((user, index) => {
-                if (!user) return null;
-                const isLast = index === allUsers.length - 1;
-                const classes = isLast
-                  ? "p-4"
-                  : "p-4 border-b border-blue-gray-50";
+      {/* Search and Add User Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Search Users
+          </CardTitle>
+          <CardDescription>Search for users by username</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by username..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={() => {
+                navigate("/admin-navigation/add-user");
+              }}
+              className="flex items-center gap-2"
+            >
+              <UserPlus className="h-4 w-4" />
+              Add User
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-                return (
-                  <tr key={index}>
-                    <td className={classes}>
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        {user.username}
-                      </Typography>
-                    </td>
-                    <td className={classes}>
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        {user?.newFields?.firstName}
-                      </Typography>
-                    </td>
-                    <td className={classes}>
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        {user?.newFields?.lastName}
-                      </Typography>
-                    </td>
-                    <td className={classes}>
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        {user?.newFields?.userCompany}
-                      </Typography>
-                    </td>
-                    <td className={classes}>
-                      <Typography
-                        variant="small"
-                        color="blue-gray"
-                        className="font-normal"
-                      >
-                        {user.role}
-                      </Typography>
-                    </td>
-
-                    <td className={classes}>
-                      <button
-                        className="bg-[#F5874B] px-4 py-1 rounded-md"
-                        onClick={() => {
-                          dispatch(
-                            setTobeEdited({
-                              data: user,
-                            })
-                          );
-                          setOpen((prev) => !prev);
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="ml-4 bg-[#22851266] px-4 py-1 rounded-md "
-                        onClick={() => {
-                          dispatch(
-                            setTobeEdited({
-                              data: user,
-                            })
-                          );
-                          setResetPasswordOpen((prev) => !prev);
-                        }}
-                      >
-                        Reset Password
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
-      )}
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>User Records</CardTitle>
+          <CardDescription>
+            {loading 
+              ? "Loading users..." 
+              : searchTerm.trim()
+                ? `Showing ${filteredUsers.length} of ${allUsers.length} user${allUsers.length !== 1 ? 's' : ''}`
+                : `Showing ${allUsers.length} user${allUsers.length !== 1 ? 's' : ''}`
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">Loading users...</span>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">
+                {searchTerm.trim() 
+                  ? `No users found matching "${searchTerm}"`
+                  : "No users found"
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead>First Name</TableHead>
+                    <TableHead>Last Name</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user, index) => {
+                    if (!user) return null;
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            <UserPlus className="h-4 w-4 text-muted-foreground" />
+                            {user.username}
+                          </div>
+                        </TableCell>
+                        <TableCell>{user?.newFields?.firstName || "-"}</TableCell>
+                        <TableCell>{user?.newFields?.lastName || "-"}</TableCell>
+                        <TableCell>{user?.newFields?.userCompany || "-"}</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium">
+                            {user.role}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                dispatch(
+                                  setTobeEdited({
+                                    data: user,
+                                  })
+                                );
+                                setOpen((prev) => !prev);
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              <Edit className="h-3 w-3" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                dispatch(
+                                  setTobeEdited({
+                                    data: user,
+                                  })
+                                );
+                                setResetPasswordOpen((prev) => !prev);
+                              }}
+                              className="flex items-center gap-1"
+                            >
+                              <KeyRound className="h-3 w-3" />
+                              Reset Password
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
