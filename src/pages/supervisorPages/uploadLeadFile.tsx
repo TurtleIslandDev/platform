@@ -19,7 +19,7 @@ import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
-const PREDEFINED_COLUMNS = [
+const BASE_COLUMNS = [
   { id: "address1", label: "Address1", required: false },
   { id: "address2", label: "Address2", required: false },
   { id: "address3", label: "Address3", required: false },
@@ -42,6 +42,16 @@ const PREDEFINED_COLUMNS = [
   { id: "security_phrase", label: "Security Phrase", required: false },
   { id: "state", label: "State", required: false },
   { id: "title", label: "Title", required: false },
+]
+
+// Extra fields used only for Homebound campaign
+const HOMEBOUND_EXTRA_COLUMNS = [
+  { id: "mortgage_balance", label: "Mortgage Balance", required: false },
+  { id: "ltv", label: "LTV", required: false },
+  { id: "credit_grade", label: "Credit Grade", required: false },
+  { id: "interest_rate", label: "Interest Rate", required: false },
+  { id: "fico_score", label: "Fico Score", required: false },
+  { id: "ssn", label: "SSN", required: false },
   // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
   // { id: "rank", label: "Rank", required: false },
   // { id: "owner", label: "Owner", required: false },
@@ -100,13 +110,21 @@ const UploadLeadFile = () => {
   const [enableDuplicateCheck, setEnableDuplicateCheck] = useState(false)
   const [duplicateCheckScope, setDuplicateCheckScope] = useState<'system' | 'list'>('system')
   
+  // Get active columns based on selected campaign
+  const getCurrentColumns = () => {
+    if (campaignName === "Homebound") {
+      return [...BASE_COLUMNS, ...HOMEBOUND_EXTRA_COLUMNS]
+    }
+    return BASE_COLUMNS
+  }
+
   // Campaign confirmation modal state
   const [showCampaignConfirm, setShowCampaignConfirm] = useState(false)
   const [campaignConfirmText, setCampaignConfirmText] = useState("")
   const [campaignConfirmError, setCampaignConfirmError] = useState("")
 
   // Filter predefined columns based on search term
-  const filteredColumns = PREDEFINED_COLUMNS.filter(
+  const filteredColumns = getCurrentColumns().filter(
     (col) =>
       col.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
       col.id.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -139,7 +157,7 @@ const UploadLeadFile = () => {
         setCsvData(data)
         
         // Auto-map columns
-        const autoMappings = autoMapColumns(headers, PREDEFINED_COLUMNS)
+        const autoMappings = autoMapColumns(headers, getCurrentColumns())
         setFieldMappings(autoMappings) // Pre-fill with suggestions
         
         setErrors([])
@@ -188,7 +206,7 @@ const UploadLeadFile = () => {
 
   // Validate required fields
   const validateMappings = () => {
-    const requiredFields = PREDEFINED_COLUMNS.filter((col) => col.required)
+    const requiredFields = getCurrentColumns().filter((col) => col.required)
     const mappedFields = Object.values(fieldMappings)
     const missingRequired = requiredFields.filter((field) => !mappedFields.includes(field.id))
 
@@ -996,7 +1014,7 @@ const UploadLeadFile = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {PREDEFINED_COLUMNS.map((predefinedField) => {
+                  {getCurrentColumns().map((predefinedField) => {
                     const mappedCsvField = Object.keys(fieldMappings).find(
                       (csvField) => fieldMappings[csvField] === predefinedField.id,
                     )
@@ -1058,7 +1076,7 @@ const UploadLeadFile = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {PREDEFINED_COLUMNS.map((predefinedField) => {
+                    {getCurrentColumns().map((predefinedField) => {
                       // Find which CSV field is mapped to this predefined field
                       const mappedCsvField = Object.keys(fieldMappings).find(
                         (csvField) => fieldMappings[csvField] === predefinedField.id,
