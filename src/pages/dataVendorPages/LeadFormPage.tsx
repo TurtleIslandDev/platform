@@ -14,6 +14,7 @@ import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
 import { fetchWithAuth } from "../../utils/fetchWithAuth"
+import * as XLSX from "xlsx"
 
 const DEFAULT_EMAILS = [
   "glenfiddich.apayart@itsbuzzmarketing.com", 
@@ -51,44 +52,92 @@ const LeadFormPage = () => {
   const { token } = useSelector((state: any) => state.user);
   const navigate = useNavigate();
 
-  const processCsvFile = (file: File) => {
-    if (!(file && (file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")))) return
+  const processFile = (file: File) => {
+    const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
+    const isCsv = file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")
+    
+    if (!isCsv && !isXlsx) {
+      alert("Please upload a valid file")
+      return
+    }
+    
     setCsvFile(file)
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
-      const rows = text
-        .split("\n")
-        .slice(0, 5)
-        .map((row) => row.split(","))
-      setCsvPreview(rows)
+    if (isXlsx) {
+      // Handle XLSX file
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { type: 'array' })
+          const firstSheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[firstSheetName]
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as string[][]
+          
+          // Get first 5 rows for preview
+          const rows = jsonData.slice(0, 5).map((row) => row.map((cell) => String(cell || '').trim()))
+          setCsvPreview(rows)
 
-      // Check for name fields
-      const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
-      const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
-      const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
-      const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
+          // Check for name fields
+          const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
+          const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
+          const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
+          const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
 
-      if (!hasFirstName && !hasLastName && !hasFullName) {
-        if (campaignName === "TM_Debt") {
-          setValidationWarning(
-            "Warning: CSV may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
-          )
-        } else {
-          setValidationWarning("Warning: CSV may lack name fields.")
+          if (!hasFirstName && !hasLastName && !hasFullName) {
+            if (campaignName === "TM_Debt") {
+              setValidationWarning(
+                "Warning: File may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
+              )
+            } else {
+              setValidationWarning("Warning: File may lack name fields.")
+            }
+          } else {
+            setValidationWarning("")
+          }
+        } catch (error) {
+          console.error("Error parsing XLSX file:", error)
+          alert("Failed to parse XLSX file. Please ensure it's a valid Excel file.")
         }
-      } else {
-        setValidationWarning("")
       }
+      reader.readAsArrayBuffer(file)
+    } else {
+      // Handle CSV file
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const text = e.target?.result as string
+        const rows = text
+          .split("\n")
+          .slice(0, 5)
+          .map((row) => row.split(","))
+        setCsvPreview(rows)
+
+        // Check for name fields
+        const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
+        const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
+        const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
+        const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
+
+        if (!hasFirstName && !hasLastName && !hasFullName) {
+          if (campaignName === "TM_Debt") {
+            setValidationWarning(
+              "Warning: File may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
+            )
+          } else {
+            setValidationWarning("Warning: File may lack name fields.")
+          }
+        } else {
+          setValidationWarning("")
+        }
+      }
+      reader.readAsText(file)
     }
-    reader.readAsText(file)
   }
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      processCsvFile(file)
+      processFile(file)
     }
   }
 
@@ -116,10 +165,10 @@ const LeadFormPage = () => {
 
   const handleSubmit = async () => {
 
-    // Skip all validation for Data Warehouse campaign - only require CSV file
+    // Skip all validation for Data Warehouse campaign - only require file
     if (campaignName === "Data Warehouse") {
       if (!csvFile) {
-        alert("Please upload a CSV file before submitting")
+        alert("Please upload a file before submitting")
         return
       }
       if (sendToEmails.length === 0) {
@@ -130,7 +179,7 @@ const LeadFormPage = () => {
       // Original validation logic for other campaigns
       if (!forthCRM && !hasNameColumns && confirmNameRequired) {
         alert(
-          "Please confirm that your CSV file contains name columns, or check ForthCRM if the opener will look up client info.",
+          "Please confirm that your file contains name columns, or check ForthCRM if the opener will look up client info.",
         )
         return
       }
@@ -160,7 +209,7 @@ const LeadFormPage = () => {
     if (csvFile) {
       formData.append("file", csvFile)
     } else {
-      alert("Please upload a CSV file before submitting")
+      alert("Please upload a file before submitting")
       return
     }
 
@@ -206,7 +255,7 @@ const LeadFormPage = () => {
                 <Upload className="h-5 w-5" />
                 Lead Upload Form
               </CardTitle>
-              <CardDescription>Upload CSV lead files with campaign details and recipient information</CardDescription>
+              <CardDescription>Upload lead files with campaign details and recipient information</CardDescription>
             </div>
             <Button 
               variant="outline" 
@@ -262,7 +311,7 @@ const LeadFormPage = () => {
               </Select>
               {campaignName === "Data Warehouse" && (
                 <p className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
-                  ℹ️ Data Warehouse campaigns only require a CSV file upload. All other fields are optional.
+                  ℹ️ Data Warehouse campaigns only require a file upload. All other fields are optional.
                 </p>
               )}
             </div>
@@ -305,9 +354,9 @@ const LeadFormPage = () => {
               />
             </div>
 
-            {/* CSV File Upload */}
+            {/* File Upload */}
             <div className="space-y-2">
-              <Label htmlFor="csv-file">CSV File *</Label>
+              <Label htmlFor="csv-file">File *</Label>
               <div
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
                 onDragEnter={(e) => { e.preventDefault(); setIsDragging(true) }}
@@ -318,14 +367,14 @@ const LeadFormPage = () => {
                   setIsDragging(false)
                   const file = e.dataTransfer.files?.[0]
                   if (file) {
-                    processCsvFile(file)
+                    processFile(file)
                   }
                 }}
               >
                 <input
                   id="csv-file"
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.xlsx"
                   onChange={handleFileUpload}
                   className="hidden"
                   
@@ -334,16 +383,16 @@ const LeadFormPage = () => {
                 <label htmlFor="csv-file" className="cursor-pointer">
                   <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600">
-                    {csvFile ? csvFile.name : "Drag and drop or click to upload CSV file"}
+                    {csvFile ? csvFile.name : "Drag and drop or click to upload file"}
                   </p>
                 </label>
               </div>
             </div>
 
-            {/* CSV Preview */}
+            {/* File Preview */}
             {csvPreview.length > 0 && (
               <div className="space-y-2">
-                <Label>CSV Preview (First 5 rows)</Label>
+                <Label>File Preview (First 5 rows)</Label>
                 <div className="border rounded-lg p-4 bg-gray-50 overflow-x-auto">
                   <table className="w-full text-sm">
                     <tbody>
@@ -390,7 +439,7 @@ const LeadFormPage = () => {
                 className={forthCRM ? "opacity-50" : ""}
               />
               <Label htmlFor="has-name-columns" className={forthCRM ? "opacity-50 text-gray-400" : ""}>
-                Confirm that the CSV file contains first name, last name, or full name columns
+                Confirm that the file contains first name, last name, or full name columns
               </Label>
             </div>
 

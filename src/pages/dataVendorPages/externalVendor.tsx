@@ -11,6 +11,7 @@ import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
 import { fetchWithAuth } from "../../utils/fetchWithAuth"
+import * as XLSX from "xlsx"
 
 
 const DEFAULT_EMAILS = [
@@ -42,10 +43,33 @@ const ExternalVendorForm = () => {
   const { token } = useSelector((state: any) => state.user);
   const navigate = useNavigate();
 
+  const processFile = (file: File) => {
+    const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
+    
+    if (isXlsx) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer)
+          const workbook = XLSX.read(data, { type: 'array' })
+          // File is valid XLSX, proceed with setting it
+          setFile(file)
+        } catch (error) {
+          console.error("Error parsing XLSX file:", error)
+          alert("Failed to parse XLSX file. Please ensure it's a valid Excel file.")
+        }
+      }
+      reader.readAsArrayBuffer(file)
+    } else {
+      // CSV or other files don't need special processing
+      setFile(file)
+    }
+  }
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
-      setFile(file)
+      processFile(file)
     }
   }
 
@@ -204,7 +228,7 @@ const ExternalVendorForm = () => {
 
             {/* File Upload */}
             <div className="space-y-2">
-              <Label htmlFor="file">File * (CSV preferred)</Label>
+              <Label htmlFor="file">File *</Label>
               <div
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
                 onDragEnter={(e) => { e.preventDefault(); setIsDragging(true) }}
@@ -215,7 +239,7 @@ const ExternalVendorForm = () => {
                   setIsDragging(false)
                   const file = e.dataTransfer.files?.[0]
                   if (file) {
-                    setFile(file)
+                    processFile(file)
                   }
                 }}
               >
@@ -230,7 +254,7 @@ const ExternalVendorForm = () => {
                 <label htmlFor="file" className="cursor-pointer">
                   <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   <p className="text-sm text-gray-600">
-                    {file ? file.name : "Drag and drop or click to upload file (CSV preferred)"}
+                    {file ? file.name : "Drag and drop or click to upload file"}
                   </p>
                 </label>
               </div>
