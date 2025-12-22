@@ -14,18 +14,10 @@ import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
 import { fetchWithAuth } from "../../utils/fetchWithAuth"
+import { env } from "../../config/env"
 
-const DEFAULT_EMAILS = [
-  "glenfiddich.apayart@itsbuzzmarketing.com", 
-  "harold.bondoc@itsbuzzmarketing.com", 
-  "jessie.fernando@itsbuzzmarketing.com", 
-  "james.chavez@itsbuzzmarketing.com", 
-  "kenneth.candor@itsbuzzmarketing.com"
-]
-
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
-// const UPLOAD_URL = "http://127.0.0.1:3173";
-// const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
+const DEFAULT_EMAILS = env.DEFAULT_EMAILS
+const UPLOAD_URL = env.UPLOAD_URL
 
 const LeadFormPage = () => {
 

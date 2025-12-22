@@ -1,6 +1,6 @@
 import { fetchWithAuth } from "./fetchWithAuth";
 
-const AUTH_URL="https://end-point.75e8s1syn0vdw.us-east-1.cs.amazonlightsail.com/guide_auth/"
+const AUTH_URL = import.meta.env.VITE_LEGACY_AUTH_URL || "https://end-point.75e8s1syn0vdw.us-east-1.cs.amazonlightsail.com/guide_auth/"
 
 const API = {
     login : async ( username, password, remember ) => {

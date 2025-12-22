@@ -12,6 +12,7 @@ import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
 import Navbar from "../../components/navigationBar/navbar";
 import { useDispatch, useSelector } from "react-redux";
 import { setIpAddress } from "../../features/slice/userSlice";
+import { env } from "../../config/env";
 
 
 const AgentNavigation = () => {
@@ -20,11 +21,11 @@ const AgentNavigation = () => {
   const [wait, setWait] = useState(false);
   const [showViciDialog, setShowViciDialog] = useState(false);
   const dispatch = useDispatch();
-  const AUTH_URL = "https://auth.itsbuzzmarketing.com";
+  const AUTH_URL = env.AUTH_URL;
 
   const VICI_URLS = {
-    classic: "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php",
-    new: "https://vici-lp1.itsbuzzmarketing.com/agent/"
+    classic: env.VICI_CLASSIC_URL,
+    new: env.VICI_NEW_URL
   };
 
   const [hoverStates, setHoverStates] = useState({

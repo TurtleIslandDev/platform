@@ -11,6 +11,7 @@ import { PlusCircle, Upload } from "lucide-react"
 import { set } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
+import { env } from "../../config/env";
 
 
 // Available data types 

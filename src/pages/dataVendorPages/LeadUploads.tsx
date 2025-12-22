@@ -28,9 +28,10 @@ import {
 import { useSelector } from "react-redux";
 import Navbar from "../../components/navigationBar/navbar";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
+import { env } from "../../config/env";
 
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
-// const UPLOAD_URL = "http://127.0.0.1:3173";
+const UPLOAD_URL = env.UPLOAD_URL;
+const PLATFORM_BACKEND_URL = env.PLATFORM_BACKEND_URL;
 
 const LeadUploads = () => {
   const [uploadData, setUploadData] = useState([]);
@@ -283,7 +284,7 @@ const LeadUploads = () => {
                                     const parts = upload.uploaded_filename.split('/')
                                     const filename = parts[parts.length - 1]
                                     const directory = parts.slice(0, -1).join('/')
-                                    const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${filename}&directory=${directory}`
+                                    const url = `${PLATFORM_BACKEND_URL}/file/download?filename=${filename}&directory=${directory}`
                                     link.href = `${url}`;
                                     link.download = upload.filename.split('/').pop() || 'download.csv';
                                     link.target = '_blank';

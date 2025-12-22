@@ -7,6 +7,7 @@ import useFetch from "./../../features/hooks/useFetch";
 import { setIpAddress, setUserAuth } from "../../features/slice/userSlice";
 import itsBuzzMarketting from "../../assets/images/itsBuzzMarketing.jpg";
 import { useDispatch, useSelector } from "react-redux";
+import { env } from "../../config/env";
 
 const Login = () => {
   let navigate = useNavigate();
@@ -22,7 +23,7 @@ const Login = () => {
   } = useForm();
   const onSubmit = async (data) => {
     try {
-      let response = await fetch("https://api.ipify.org?format=json");
+      let response = await fetch(env.IP_CHECK_API);
       let resData = await response.json();
       if (resData.ip) {
         const ipAddress = resData.ip;

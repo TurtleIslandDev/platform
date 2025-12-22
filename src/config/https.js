@@ -1,7 +1,7 @@
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const base_url = "https://auth.itsbuzzmarketing.com";
+const base_url = import.meta.env.VITE_AUTH_URL || "https://auth.itsbuzzmarketing.com";
 // const auth_url = "";
 // const base_url = "http://localhost:3000";
 const axiosBaseClient = (type) => {

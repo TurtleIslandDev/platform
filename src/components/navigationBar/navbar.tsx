@@ -5,8 +5,9 @@ import { Link, useNavigate } from "react-router-dom"
 import { Button } from "../../components/ui/button"
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../features/slice/userSlice";
+import { env } from "../../config/env";
 
-const AUTH_URL = "https://auth.itsbuzzmarketing.com";
+const AUTH_URL = env.AUTH_URL;
 
 export default function Navbar() {
 

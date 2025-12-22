@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { autoMapColumns } from "../../utils/columnMapper";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
+import { env } from "../../config/env";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
@@ -60,11 +61,8 @@ const HOMEBOUND_EXTRA_COLUMNS = [
   // { id: "record_status", label: "Record Status", required: false },
 ]
 
-// 
-// const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
-// const UPLOAD_URL = "http://127.0.0.1:3173";
-// const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
+import { env } from "../../config/env"
+const UPLOAD_URL = env.UPLOAD_URL
 
 const UploadLeadFile = () => {
   const navigate = useNavigate();

@@ -33,10 +33,10 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
+import { env } from "../../config/env";
 
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
-// const UPLOAD_URL = "http://127.0.0.1:3173";
-// const UPLOAD_URL = "http://54.167.53.149"
+const UPLOAD_URL = env.UPLOAD_URL;
+const PLATFORM_BACKEND_URL = env.PLATFORM_BACKEND_URL;
 
 
 // Mock data - replace with actual API call
@@ -128,7 +128,7 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
     const parts = filename.split('/');
     const file = parts[parts.length - 1];
     const directory = parts.slice(0, -1).join('/');
-    const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(file)}&directory=${directory}`;
+    const url = `${PLATFORM_BACKEND_URL}/file/download?filename=${encodeURIComponent(file)}&directory=${directory}`;
     
     link.href = url;
     link.download = file || `${category}.csv`;
@@ -1031,7 +1031,7 @@ const ShowUploads = () => {
                                   const filename = parts[parts.length - 1]
                                   // directory is everything before the filename
                                   const directory = parts.slice(0, -1).join('/')
-                                  const url = `https://platformbackend.itsbuzzmarketing.com/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
+                                  const url = `${PLATFORM_BACKEND_URL}/file/download?filename=${encodeURIComponent(filename)}&directory=${directory}`;
                                   
                                   link.href = url;
                                   link.download = filename || 'download.csv';

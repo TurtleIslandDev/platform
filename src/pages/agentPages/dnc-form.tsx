@@ -20,10 +20,10 @@ import Navbar from "../../components/navigationBar/navbar"
 import { useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { fetchWithAuth } from "../../utils/fetchWithAuth"
+import { env } from "../../config/env";
 
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
-// const UPLOAD_URL = "http://127.0.0.1:3173";
-// const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
+const UPLOAD_URL = env.UPLOAD_URL;
+const PLATFORM_FRONTEND_URL = env.PLATFORM_FRONTEND_URL;
 
 const DNCForm = () => {
   const { token } = useSelector((state: any) => state.user);
@@ -113,7 +113,7 @@ const DNCForm = () => {
 
   if (!token || token == null) {
     // navigate("/")
-    window.location.href = "https://platform.itsbuzzmarketing.com"
+    window.location.href = PLATFORM_FRONTEND_URL
   }
 
   return (

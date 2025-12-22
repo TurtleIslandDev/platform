@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import useFetch from "./../../features/hooks/useFetch";
 import { useSelector } from "react-redux";
-
+import { env } from "../../config/env";
 import { saveAs } from "file-saver";
 
 
@@ -13,7 +13,7 @@ const UploadDataPage = () => {
   const [uploadData, setUploadData] = useState([]);
   const [wait, setWait] = useState(false);
 
-  const UPLOAD_URL = "http://127.0.0.1:3000";
+  const UPLOAD_URL = env.UPLOAD_URL;
 
   const { postData } = useFetch();
   const {

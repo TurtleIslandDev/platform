@@ -24,10 +24,8 @@ import { useSelector } from "react-redux";
 import { getHeaders } from "../../helpers/config";
 import Navbar from "../../components/navigationBar/navbar";
 
-// Backend URL configuration - matches uploadLeadFile.tsx
-// const BACKEND_URL = "https://endpoint.itsbuzzmarketing.com";
-// const BACKEND_URL = "https://app.itsbuzzmarketing.com"
-const BACKEND_URL = "http://127.0.0.1:3173";  // Local backend for testing
+import { env } from "../../config/env";
+const BACKEND_URL = env.BACKEND_URL;
 
 const ShowJobs = () => {
   const navigate = useNavigate();
