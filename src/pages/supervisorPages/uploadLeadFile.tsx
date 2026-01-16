@@ -61,7 +61,6 @@ const HOMEBOUND_EXTRA_COLUMNS = [
   // { id: "record_status", label: "Record Status", required: false },
 ]
 
-import { env } from "../../config/env"
 const UPLOAD_URL = env.UPLOAD_URL
 
 const UploadLeadFile = () => {
