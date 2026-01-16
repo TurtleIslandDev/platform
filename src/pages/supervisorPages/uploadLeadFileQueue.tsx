@@ -19,7 +19,7 @@ import * as XLSX from "xlsx";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
-const PREDEFINED_COLUMNS = [
+const BASE_COLUMNS = [
   { id: "address1", label: "Address1", required: false },
   { id: "address2", label: "Address2", required: false },
   { id: "address3", label: "Address3", required: false },
@@ -50,11 +50,31 @@ const PREDEFINED_COLUMNS = [
   // { id: "record_status", label: "Record Status", required: false },
 ]
 
+// Extra fields used only for Homebound campaign
+const HOMEBOUND_EXTRA_COLUMNS = [
+  { id: "mortgage_balance", label: "Mortgage Balance", required: false },
+  { id: "ltv", label: "LTV", required: false },
+  { id: "credit_grade", label: "Credit Grade", required: false },
+  { id: "interest_rate", label: "Interest Rate", required: false },
+  { id: "fico_score", label: "Fico Score", required: false },
+  { id: "ssn", label: "SSN", required: false },
+  // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
+  // { id: "rank", label: "Rank", required: false },
+  // { id: "owner", label: "Owner", required: false },
+  // { id: "call_type", label: "Call Type", required: false },
+  // { id: "inbound_group", label: "Inbound Group", required: false },
+  // { id: "record_status", label: "Record Status", required: false },
+]
+
 // 
 // const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 const UPLOAD_URL = "https://app.itsbuzzmarketing.com/testing" 
 // const UPLOAD_URL = "http://127.0.0.1:3173";  // Local backend for testing
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
+
+const isExcelFile = (filename: string): boolean => {
+  return /\.xlsx?$/i.test(filename)
+}
 
 const UploadLeadFileQueue = () => {
   const navigate = useNavigate();
@@ -102,13 +122,21 @@ const UploadLeadFileQueue = () => {
   const [hasNoHeaders, setHasNoHeaders] = useState(false)
   const [firstRowData, setFirstRowData] = useState<string[]>([])
   
+  // Get active columns based on selected campaign
+  const getCurrentColumns = () => {
+    if (campaignName === "Homebound") {
+      return [...BASE_COLUMNS, ...HOMEBOUND_EXTRA_COLUMNS]
+    }
+    return BASE_COLUMNS
+  }
+
   // Campaign confirmation modal state
   const [showCampaignConfirm, setShowCampaignConfirm] = useState(false)
   const [campaignConfirmText, setCampaignConfirmText] = useState("")
   const [campaignConfirmError, setCampaignConfirmError] = useState("")
 
   // Filter predefined columns based on search term
-  const filteredColumns = PREDEFINED_COLUMNS.filter(
+  const filteredColumns = getCurrentColumns().filter(
     (col) =>
       col.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
       col.id.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -155,7 +183,7 @@ const UploadLeadFileQueue = () => {
         
         // Auto-map columns only if headers exist
         if (!hasNoHeaders) {
-          const autoMappings = autoMapColumns(headers, PREDEFINED_COLUMNS)
+          const autoMappings = autoMapColumns(headers, getCurrentColumns())
           setFieldMappings(autoMappings) // Pre-fill with suggestions
         } else {
           setFieldMappings({}) // Clear mappings for no-headers mode
@@ -217,7 +245,7 @@ const UploadLeadFileQueue = () => {
           
           // Auto-map columns only if headers exist
           if (!hasNoHeaders) {
-            const autoMappings = autoMapColumns(headers, PREDEFINED_COLUMNS)
+            const autoMappings = autoMapColumns(headers, getCurrentColumns())
             setFieldMappings(autoMappings) // Pre-fill with suggestions
           } else {
             setFieldMappings({}) // Clear mappings for no-headers mode
@@ -238,9 +266,7 @@ const UploadLeadFileQueue = () => {
     const file = event.target.files?.[0]
     if (!file) return
     
-    const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
-    
-    if (isXlsx) {
+    if (isExcelFile(file.name)) {
       parseXlsxFile(file, hasNoHeaders)
     } else {
       parseCsvFile(file, hasNoHeaders)
@@ -280,7 +306,7 @@ const UploadLeadFileQueue = () => {
 
   // Validate required fields
   const validateMappings = () => {
-    const requiredFields = PREDEFINED_COLUMNS.filter((col) => col.required)
+    const requiredFields = getCurrentColumns().filter((col) => col.required)
     const mappedFields = Object.values(fieldMappings)
     const missingRequired = requiredFields.filter((field) => !mappedFields.includes(field.id))
 
@@ -996,8 +1022,7 @@ const UploadLeadFileQueue = () => {
                       setIsDragging(false)
                       const file = e.dataTransfer.files?.[0]
                       if (file) {
-                        const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
-                        if (isXlsx) {
+                        if (isExcelFile(file.name)) {
                           parseXlsxFile(file, hasNoHeaders)
                         } else {
                           parseCsvFile(file, hasNoHeaders)
@@ -1005,7 +1030,7 @@ const UploadLeadFileQueue = () => {
                       }
                     }}
                   >
-                    <Input id="csv-file" type="file" accept=".csv,.xlsx" onChange={handleFileUpload} className="pt-0 hidden" />
+                    <Input id="csv-file" type="file" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} className="pt-0 hidden" />
                     <label htmlFor="csv-file" className="cursor-pointer text-sm text-gray-600">
                       {csvFile ? `Selected: ${csvFile.name}` : "Click or drag & drop file here"}
                     </label>
@@ -1020,8 +1045,7 @@ const UploadLeadFileQueue = () => {
                       setHasNoHeaders(checked as boolean)
                       // Re-parse file if already loaded
                       if (csvFile) {
-                        const isXlsx = csvFile.name.toLowerCase().endsWith('.xlsx')
-                        if (isXlsx) {
+                        if (isExcelFile(csvFile.name)) {
                           parseXlsxFile(csvFile, checked as boolean)
                         } else {
                           parseCsvFile(csvFile, checked as boolean)
@@ -1214,7 +1238,7 @@ const UploadLeadFileQueue = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {PREDEFINED_COLUMNS.map((predefinedField) => {
+                  {getCurrentColumns().map((predefinedField) => {
                     const mappedCsvField = Object.keys(fieldMappings).find(
                       (csvField) => fieldMappings[csvField] === predefinedField.id,
                     )
@@ -1308,8 +1332,8 @@ const UploadLeadFileQueue = () => {
                             {mappedPredefinedField ? (
                               <div className="flex items-center gap-2">
                                 <Badge variant="secondary" className="flex items-center gap-1">
-                                  {PREDEFINED_COLUMNS.find(col => col.id === mappedPredefinedField)?.label || mappedPredefinedField}
-                                  {PREDEFINED_COLUMNS.find(col => col.id === mappedPredefinedField)?.required && (
+                                  {getCurrentColumns().find(col => col.id === mappedPredefinedField)?.label || mappedPredefinedField}
+                                  {getCurrentColumns().find(col => col.id === mappedPredefinedField)?.required && (
                                     <span className="text-red-500 ml-1">*</span>
                                   )}
                                 </Badge>
@@ -1323,7 +1347,7 @@ const UploadLeadFileQueue = () => {
                                   <SelectValue placeholder="Select predefined field..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {PREDEFINED_COLUMNS
+                                  {getCurrentColumns()
                                     .filter(
                                       (predefinedField) =>
                                         // Show if not mapped, or if it's currently mapped to this column
@@ -1346,7 +1370,7 @@ const UploadLeadFileQueue = () => {
                   ) : (
                     // Original predefined field-based mapping UI (with headers)
                     <div className="space-y-4">
-                      {PREDEFINED_COLUMNS.map((predefinedField) => {
+                      {getCurrentColumns().map((predefinedField) => {
                         // Find which CSV field is mapped to this predefined field
                         const mappedCsvField = Object.keys(fieldMappings).find(
                           (csvField) => fieldMappings[csvField] === predefinedField.id,
