@@ -3,9 +3,19 @@ import { useForm } from "react-hook-form";
 import useFetch from "./../../features/hooks/useFetch";
 import { useSelector } from "react-redux";
 import { userPermissions } from "../../data/constants";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Eye, EyeOff, UserPlus, CheckCircle, AlertCircle } from "lucide-react";
+import Navbar from "../../components/navigationBar/navbar";
+
 const AddUser = () => {
   const { token } = useSelector((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
+  const [showPhonePassword, setShowPhonePassword] = useState(false);
   const [responseMessage, setResponseMessage] = useState("");
   const { postData } = useFetch();
   const {
@@ -104,36 +114,54 @@ const AddUser = () => {
     // Only run this effect if responseMessage is set
     if (responseMessage) {
       const timer = setTimeout(() => {
-        setResponseMessage(""); // Reset the responseMessage after 5 seconds
+        setResponseMessage(""); // Reset the responseMessage after 10 seconds
       }, 10000);
 
       // Cleanup the timeout if component unmounts or responseMessage changes
       return () => clearTimeout(timer);
     }
-  }, [responseMessage]); //
+  }, [responseMessage]);
+
   return (
-    <div className="w-full  flex items-center justify-center">
-      <div className="rounded-[38px] bg-white w-[780px] py-14 px-16 flex flex-col items-center justify-center gap-14">
-        <h1 className="text-4xl font-semibold">Add User</h1>
-        <form
-          className="w-full flex flex-col items-center"
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          {responseMessage?.message &&
-            (responseMessage?.status === "success" ? (
-              <p className="text-green-400">{responseMessage?.message}</p>
-            ) : responseMessage?.status === "error" ? (
-              <p className="text-red-400">{responseMessage?.message}</p>
-            ) : null)}
-          <div className="w-full mb-8">
-            <p className="text-2xl text-[#222] mb-2">Select User Role</p>
-            <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
+    <div className="max-w-[95%] mx-auto p-6 pt-16 space-y-6">
+      <Navbar />
+      
+      <div className="mb-2">
+        <h1 className="text-3xl font-bold">Add User</h1>
+      </div>
+
+      {responseMessage?.message && (
+        <Alert variant={responseMessage?.status === "success" ? "default" : "destructive"}>
+          {responseMessage?.status === "success" ? (
+            <CheckCircle className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
+          <AlertDescription>{responseMessage?.message}</AlertDescription>
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Basic Information Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Basic Information
+            </CardTitle>
+            <CardDescription>Set up the user's role, company, and credentials</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="role" className="mb-2 block">
+                Select User Role <span className="text-red-500">*</span>
+              </Label>
               <select
-                className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                placeholder="Password"
+                id="role"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 {...register("role", { required: true })}
               >
-                <option value="" disabled selected>
+                <option value="" disabled>
                   Select User Role
                 </option>
                 <option value="agent">Agent</option>
@@ -155,720 +183,700 @@ const AddUser = () => {
                 <option value="client">Client</option>
                 <option value="closer">Closer</option>
               </select>
-            </label>
-            {errors.role && (
-              <span className="text-right text-red-500 text-xs">
-                *This field is required
-              </span>
-            )}
-          </div>
-          <div className="w-full mb-8">
-            <p className="text-2xl text-[#222] mb-2">Select User Company</p>
-            <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
+              {errors.role && (
+                <p className="text-red-500 text-xs mt-1">*This field is required</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="userCompany" className="mb-2 block">
+                Select User Company <span className="text-red-500">*</span>
+              </Label>
               <select
-                className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                placeholder="Password"
+                id="userCompany"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 {...register("userCompany", { required: true })}
               >
-                <option value="" disabled selected>
+                <option value="" disabled>
                   Select User Company
                 </option>
                 <option value="Buzz">Buzz</option>
                 <option value="Fasttrack">Fasttrack</option>
                 <option value="Total Interactions">Total Interactions</option>
               </select>
-            </label>
-            {errors.userCompany && (
-              <span className="text-right text-red-500 text-xs">
-                *This field is required
-              </span>
-            )}
-          </div>
+              {errors.userCompany && (
+                <p className="text-red-500 text-xs mt-1">*This field is required</p>
+              )}
+            </div>
 
-          {role === "dataVendor" && (checkRole === "partner" || "supplier") && (
-            <div className="w-full mb-8">
-              <p className="text-2xl text-[#222] mb-2">Select Sub Role</p>
-              <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
+            {role === "dataVendor" && (checkRole === "partner" || checkRole === "supplier") && (
+              <div>
+                <Label htmlFor="subRole" className="mb-2 block">
+                  Select Sub Role <span className="text-red-500">*</span>
+                </Label>
                 <select
-                  className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                  placeholder="Select User Role"
+                  id="subRole"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   {...register("subRole", { required: true })}
                 >
-                  <option value="" disabled selected>
+                  <option value="" disabled>
                     Select Sub User Role
                   </option>
                   <option value="partner">Partner</option>
                   <option value="supplier">Supplier</option>
                 </select>
-              </label>
-              {errors.subRole && (
-                <span className="text-right text-red-500 text-xs">
-                  *This field is required
-                </span>
+                {errors.subRole && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="username" className="mb-2 block">
+                Username <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="username"
+                {...register("username", { required: true })}
+              />
+              {errors.username && (
+                <p className="text-red-500 text-xs mt-1">*This field is required</p>
               )}
             </div>
-          )}
-          <div className="w-full mb-5">
-            <p className="text-2xl text-[#222] mb-2">Username</p>
-            <label className="input input-bordered flex items-center gap-2 ">
-              <input
-                {...register("username", { required: true })}
-                type="text"
-                className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                placeholder="username"
-              />
-            </label>
-            {errors.username && (
-              <span className="text-right text-red-500 text-xs">
-                *This field is required
-              </span>
-            )}
-          </div>
-          <div className="w-full mb-5">
-            <p className="text-2xl text-[#222] mb-2">First Name</p>
-            <label className="input input-bordered flex items-center gap-2 ">
-              <input
-                {...register("firstName", { required: true })}
-                type="text"
-                className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                placeholder="First Name"
-              />
-            </label>
-            {errors.firstName && (
-              <span className="text-right text-red-500 text-xs">
-                *This field is required
-              </span>
-            )}
-          </div>
 
-          <div className="w-full mb-5">
-            <p className="text-2xl text-[#222] mb-2">Last Name</p>
-            <label className="input input-bordered flex items-center gap-2 ">
-              <input
-                {...register("lastName", { required: true })}
-                type="text"
-                className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                placeholder="Last Name"
-              />
-            </label>
-            {errors.lastName && (
-              <span className="text-right text-red-500 text-xs">
-                *This field is required
-              </span>
-            )}
-          </div>
-          <div className="w-full mb-5">
-            <p className="text-2xl text-[#222] mb-2">Email</p>
-            <label className="input input-bordered flex items-center gap-2 ">
-              <input
-                {...register("email", { required: true })}
-                type="text"
-                className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                placeholder="email"
-              />
-            </label>
-            {errors.email && (
-              <span className="text-right text-red-500 text-xs">
-                *This field is required
-              </span>
-            )}
-          </div>
-          <div className="w-full mb-8">
-            <p className="text-2xl text-[#222] mb-2">Password</p>
-            <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                placeholder="Password"
-                {...register("password", { required: true })}
-              />
-              <svg
-                className="absolute right-5 cursor-pointer"
-                width={29}
-                height={18}
-                viewBox="0 0 29 18"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                onClick={() => {
-                  setShowPassword(!showPassword);
-                }}
-              >
-                <path
-                  d="M18.6332 9.10754C18.6332 11.38 16.7103 13.2222 14.3383 13.2222C11.9664 13.2222 10.0435 11.38 10.0435 9.10754C10.0435 6.83504 11.9664 4.99286 14.3383 4.99286C16.7103 4.99284 18.6332 6.83507 18.6332 9.10754ZM14.3461 0.540161C11.8902 0.551055 9.34461 1.14893 6.93486 2.29359C5.14564 3.1785 3.40196 4.42698 1.88836 5.96797C1.14495 6.75459 0.196758 7.89361 0.043457 9.10888C0.0615737 10.1616 1.19077 11.4609 1.88836 12.2498C3.30773 13.7303 5.006 14.9439 6.93486 15.9251C9.18207 17.0157 11.6694 17.6436 14.3461 17.6785C16.8043 17.6675 19.3494 17.0627 21.7565 15.9251C23.5457 15.0402 25.2902 13.7908 26.8039 12.2498C27.5472 11.4632 28.4954 10.3242 28.6488 9.10888C28.6306 8.05618 27.5014 6.75678 26.8039 5.96792C25.3845 4.48745 23.6853 3.27476 21.7565 2.29355C19.5104 1.20378 17.0169 0.580185 14.3461 0.540161ZM14.3443 2.66763C18.0658 2.66763 21.0826 5.55186 21.0826 9.10981C21.0826 12.6677 18.0658 15.552 14.3443 15.552C10.6228 15.552 7.60596 12.6677 7.60596 9.10981C7.60596 5.55186 10.6228 2.66763 14.3443 2.66763Z"
-                  fill="#999999"
+            <div>
+              <Label htmlFor="password" className="mb-2 block">
+                Password <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  className="pr-10"
+                  {...register("password", { required: true })}
                 />
-              </svg>
-            </label>
-            {errors.password && (
-              <span className="text-right text-red-500 text-xs">
-                *This field is required
-              </span>
-            )}
-          </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">*This field is required</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          {role === "agent" && (
-            <>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Phone</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("phone", { required: true })}
-                    type="number"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="phone"
-                  />
-                </label>
+        {/* Personal Information Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+            <CardDescription>Enter the user's personal details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="firstName" className="mb-2 block">
+                First Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="First Name"
+                {...register("firstName", { required: true })}
+              />
+              {errors.firstName && (
+                <p className="text-red-500 text-xs mt-1">*This field is required</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="lastName" className="mb-2 block">
+                Last Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="lastName"
+                type="text"
+                placeholder="Last Name"
+                {...register("lastName", { required: true })}
+              />
+              {errors.lastName && (
+                <p className="text-red-500 text-xs mt-1">*This field is required</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="email" className="mb-2 block">
+                Email <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="email"
+                {...register("email", { required: true })}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">*This field is required</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Agent Role Specific Fields */}
+        {role === "agent" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Agent Information</CardTitle>
+              <CardDescription>Additional details for agent role</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="phone" className="mb-2 block">
+                  Phone <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="phone"
+                  type="number"
+                  placeholder="phone"
+                  {...register("phone", { required: true })}
+                />
                 {errors.phone && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">Phone Password</p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
+
+              <div>
+                <Label htmlFor="phonePassword" className="mb-2 block">
+                  Phone Password <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="phonePassword"
+                    type={showPhonePassword ? "text" : "password"}
                     placeholder="Phone Password"
+                    className="pr-10"
                     {...register("phonePassword", { required: true })}
                   />
-                  <svg
-                    className="absolute right-5 cursor-pointer"
-                    width={29}
-                    height={18}
-                    viewBox="0 0 29 18"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    onClick={() => {
-                      setShowPassword(!showPassword);
-                    }}
+                  <button
+                    type="button"
+                    onClick={() => setShowPhonePassword(!showPhonePassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
-                    <path
-                      d="M18.6332 9.10754C18.6332 11.38 16.7103 13.2222 14.3383 13.2222C11.9664 13.2222 10.0435 11.38 10.0435 9.10754C10.0435 6.83504 11.9664 4.99286 14.3383 4.99286C16.7103 4.99284 18.6332 6.83507 18.6332 9.10754ZM14.3461 0.540161C11.8902 0.551055 9.34461 1.14893 6.93486 2.29359C5.14564 3.1785 3.40196 4.42698 1.88836 5.96797C1.14495 6.75459 0.196758 7.89361 0.043457 9.10888C0.0615737 10.1616 1.19077 11.4609 1.88836 12.2498C3.30773 13.7303 5.006 14.9439 6.93486 15.9251C9.18207 17.0157 11.6694 17.6436 14.3461 17.6785C16.8043 17.6675 19.3494 17.0627 21.7565 15.9251C23.5457 15.0402 25.2902 13.7908 26.8039 12.2498C27.5472 11.4632 28.4954 10.3242 28.6488 9.10888C28.6306 8.05618 27.5014 6.75678 26.8039 5.96792C25.3845 4.48745 23.6853 3.27476 21.7565 2.29355C19.5104 1.20378 17.0169 0.580185 14.3461 0.540161ZM14.3443 2.66763C18.0658 2.66763 21.0826 5.55186 21.0826 9.10981C21.0826 12.6677 18.0658 15.552 14.3443 15.552C10.6228 15.552 7.60596 12.6677 7.60596 9.10981C7.60596 5.55186 10.6228 2.66763 14.3443 2.66763Z"
-                      fill="#999999"
-                    />
-                  </svg>
-                </label>
+                    {showPhonePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {errors.phonePassword && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">
-                  Select Pay Structure
-                </p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <select
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Password"
-                    {...register("payStructure", { required: true })}
-                  >
-                    <option value="" disabled selected>
-                      Select Pay Structure
-                    </option>
-                    <option value="commission">Commission</option>
-                    <option value="hourly">Hourly</option>
-                  </select>
-                </label>
+
+              <div>
+                <Label htmlFor="payStructure" className="mb-2 block">
+                  Select Pay Structure <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="payStructure"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("payStructure", { required: true })}
+                >
+                  <option value="" disabled>
+                    Select Pay Structure
+                  </option>
+                  <option value="commission">Commission</option>
+                  <option value="hourly">Hourly</option>
+                </select>
                 {errors.payStructure && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-            </>
-          )}
-          {checkRole === "partner" && role === "dataVendor" && (
-            <div className="w-full">
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Company</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("company", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="company"
-                  />
-                </label>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Data Vendor Partner Role Specific Fields */}
+        {checkRole === "partner" && role === "dataVendor" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Vendor Partner Information</CardTitle>
+              <CardDescription>Additional details for data vendor partner role</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="company" className="mb-2 block">
+                  Company <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="company"
+                  type="text"
+                  placeholder="company"
+                  {...register("company", { required: true })}
+                />
                 {errors.company && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Address</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("address", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="address"
-                  />
-                </label>
-                {errors.address && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Phone</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("phone", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="phone"
-                  />
-                </label>
-                {errors.phone && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Contact</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("contact", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="contact"
-                  />
-                </label>
-                {errors.contact && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
 
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Authorizations</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("authorizations", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Authorizations"
-                  />
-                </label>
-                {errors.authorizations && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+              <div>
+                <Label htmlFor="address" className="mb-2 block">
+                  Address <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="address"
+                  type="text"
+                  placeholder="address"
+                  {...register("address", { required: true })}
+                />
+                {errors.address && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-              {/* Revenue Share split % */}
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">
-                  Revenue share split (%)
-                </p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("revenueShareSplit", { required: true })}
-                    type="number"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Revenue share split %"
-                  />
-                </label>
+
+              <div>
+                <Label htmlFor="phone-partner" className="mb-2 block">
+                  Phone <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="phone-partner"
+                  type="text"
+                  placeholder="phone"
+                  {...register("phone", { required: true })}
+                />
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="contact" className="mb-2 block">
+                  Contact <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="contact"
+                  type="text"
+                  placeholder="contact"
+                  {...register("contact", { required: true })}
+                />
+                {errors.contact && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="authorizations" className="mb-2 block">
+                  Authorizations <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="authorizations"
+                  type="text"
+                  placeholder="Authorizations"
+                  {...register("authorizations", { required: true })}
+                />
+                {errors.authorizations && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="revenueShareSplit" className="mb-2 block">
+                  Revenue share split (%) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="revenueShareSplit"
+                  type="number"
+                  placeholder="Revenue share split %"
+                  {...register("revenueShareSplit", { required: true })}
+                />
                 {errors.revenueShareSplit && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">Payout Schedule</p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <select
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Password"
-                    {...register("payoutSchedule", { required: true })}
-                  >
-                    {" "}
-                    <option value="" disabled selected>
-                      Select Payout Schedule
-                    </option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bimonthly">Bimonthly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </label>
-                {errors.payoutSchedule && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">
-                  Data Types Available
-                </p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <select
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Password"
-                    {...register("dataTypesAvailable", { required: true })}
-                  >
-                    <option value="" disabled selected>
-                      Select Available Data Types
-                    </option>
-                    <option value="Web Form">Web Form</option>
-                    <option value="API">API</option>
-                    <option value="List">List</option>
-                  </select>
-                </label>
-                {errors.dataTypesAvailable && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">
-                  Data ownership duration
-                </p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <select
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Password"
-                    {...register("dataOwnershipDuration", { required: true })}
-                  >
-                    <option value="" disabled selected>
-                      Select Data ownership duration
-                    </option>
-                    <option value="30 days">30 days</option>
-                    <option value="90 days">90 days</option>
-                    <option value="1 year">1 year</option>
-                    <option value="Indefinite">Indefinite</option>
-                  </select>
-                </label>
-                {errors.dataOwnershipDuration && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">Authorized Programs</p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <div>
-                    <label>
-                      <input
-                        {...register("authorizedPrograms", { required: true })}
-                        type="checkbox"
-                        value="Debt"
-                      />
-                      Debt
-                    </label>
-                  </div>
-                  <div>
-                    <label>
-                      <input
-                        {...register("authorizedPrograms", { required: true })}
-                        type="checkbox"
-                        value="Personal Loans"
-                      />
-                      Personal Loans
-                    </label>
-                  </div>
-                  <div>
-                    <label>
-                      <input
-                        {...register("authorizedPrograms", { required: true })}
-                        type="checkbox"
-                        value="Mortgages"
-                      />
-                      Mortgages
-                    </label>
-                  </div>
-                </label>
-                {errors.authorizedPrograms && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-          {checkRole === "supplier" && role === "dataVendor" && (
-            <div className="w-full">
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Company</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("company", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="company"
-                  />
-                </label>
-                {errors.company && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Address</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("address", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="address"
-                  />
-                </label>
-                {errors.address && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Phone</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("phone", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="phone"
-                  />
-                </label>
-                {errors.phone && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Contact</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("contact", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="contact"
-                  />
-                </label>
-                {errors.contact && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">First Name</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("firstName", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="First Name"
-                  />
-                </label>
-                {errors.firstName && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
 
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Last Name</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("lastName", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Last Name"
-                  />
-                </label>
-                {errors.lastName && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Email</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("email", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="email"
-                  />
-                </label>
-                {errors.email && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Authorizations</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("authorizations", { required: true })}
-                    type="text"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Authorizations"
-                  />
-                </label>
-                {errors.authorizations && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              {/* Per Record cost ($)*/}
-              <div className="w-full mb-5">
-                <p className="text-2xl text-[#222] mb-2">Per Record cost ($)</p>
-                <label className="input input-bordered flex items-center gap-2 ">
-                  <input
-                    {...register("perRecordCost", { required: true })}
-                    type="number"
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Per Record cost ($)"
-                  />
-                </label>
-                {errors.perRecordCost && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
-                )}
-              </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">Payout Schedule</p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <select
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Password"
-                    {...register("payoutSchedule", { required: true })}
-                  >
-                    {" "}
-                    <option value="" disabled selected>
-                      Select Payout Schedule
-                    </option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bimonthly">Bimonthly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </label>
+              <div>
+                <Label htmlFor="payoutSchedule-partner" className="mb-2 block">
+                  Payout Schedule <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="payoutSchedule-partner"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("payoutSchedule", { required: true })}
+                >
+                  <option value="" disabled>
+                    Select Payout Schedule
+                  </option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="bimonthly">Bimonthly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
                 {errors.payoutSchedule && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">
-                  Data Types Available
-                </p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <select
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Password"
-                    {...register("dataTypesAvailable", { required: true })}
-                  >
-                    <option value="" disabled selected>
-                      Select Available Data Types
-                    </option>
-                    <option value="Web Form">Web Form</option>
-                    <option value="API">API</option>
-                    <option value="List">List</option>
-                  </select>
-                </label>
+
+              <div>
+                <Label htmlFor="dataTypesAvailable-partner" className="mb-2 block">
+                  Data Types Available <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="dataTypesAvailable-partner"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("dataTypesAvailable", { required: true })}
+                >
+                  <option value="" disabled>
+                    Select Available Data Types
+                  </option>
+                  <option value="Web Form">Web Form</option>
+                  <option value="API">API</option>
+                  <option value="List">List</option>
+                </select>
                 {errors.dataTypesAvailable && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">
-                  Data ownership duration
-                </p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <select
-                    className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                    placeholder="Password"
-                    {...register("dataOwnershipDuration", { required: true })}
-                  >
-                    <option value="" disabled selected>
-                      Select Data ownership duration
-                    </option>
-                    <option value="30 days">30 days</option>
-                    <option value="90 days">90 days</option>
-                    <option value="1 year">1 year</option>
-                    <option value="Indefinite">Indefinite</option>
-                  </select>
-                </label>
+
+              <div>
+                <Label htmlFor="dataOwnershipDuration-partner" className="mb-2 block">
+                  Data ownership duration <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="dataOwnershipDuration-partner"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("dataOwnershipDuration", { required: true })}
+                >
+                  <option value="" disabled>
+                    Select Data ownership duration
+                  </option>
+                  <option value="30 days">30 days</option>
+                  <option value="90 days">90 days</option>
+                  <option value="1 year">1 year</option>
+                  <option value="Indefinite">Indefinite</option>
+                </select>
                 {errors.dataOwnershipDuration && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-              <div className="w-full mb-8">
-                <p className="text-2xl text-[#222] mb-2">Authorized Programs</p>
-                <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                  <div>
-                    <label>
-                      <input
-                        {...register("authorizedPrograms", { required: true })}
-                        type="checkbox"
-                        value="Debt"
-                      />
+
+              <div>
+                <Label className="mb-2 block">
+                  Authorized Programs <span className="text-red-500">*</span>
+                </Label>
+                <div className="space-y-3 p-4 border rounded-md">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="debt"
+                      type="checkbox"
+                      value="Debt"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      {...register("authorizedPrograms", { required: true })}
+                    />
+                    <Label htmlFor="debt" className="cursor-pointer font-normal">
                       Debt
-                    </label>
+                    </Label>
                   </div>
-                  <div>
-                    <label>
-                      <input
-                        {...register("authorizedPrograms", { required: true })}
-                        type="checkbox"
-                        value="Personal Loans"
-                      />
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="personal-loans"
+                      type="checkbox"
+                      value="Personal Loans"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      {...register("authorizedPrograms", { required: true })}
+                    />
+                    <Label htmlFor="personal-loans" className="cursor-pointer font-normal">
                       Personal Loans
-                    </label>
+                    </Label>
                   </div>
-                  <div>
-                    <label>
-                      <input
-                        {...register("authorizedPrograms", { required: true })}
-                        type="checkbox"
-                        value="Mortgages"
-                      />
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="mortgages"
+                      type="checkbox"
+                      value="Mortgages"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      {...register("authorizedPrograms", { required: true })}
+                    />
+                    <Label htmlFor="mortgages" className="cursor-pointer font-normal">
                       Mortgages
-                    </label>
+                    </Label>
                   </div>
-                </label>
+                </div>
                 {errors.authorizedPrograms && (
-                  <span className="text-right text-red-500 text-xs">
-                    *This field is required
-                  </span>
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
                 )}
               </div>
-            </div>
-          )}
-          <button
-            type="submit"
-            className="bg-[#1E40AF] rounded-[60px] py-4 px-10 text-white font-bold text-xl max-w-48"
-          >
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Data Vendor Supplier Role Specific Fields */}
+        {checkRole === "supplier" && role === "dataVendor" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Data Vendor Supplier Information</CardTitle>
+              <CardDescription>Additional details for data vendor supplier role</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="company-supplier" className="mb-2 block">
+                  Company <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="company-supplier"
+                  type="text"
+                  placeholder="company"
+                  {...register("company", { required: true })}
+                />
+                {errors.company && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="address-supplier" className="mb-2 block">
+                  Address <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="address-supplier"
+                  type="text"
+                  placeholder="address"
+                  {...register("address", { required: true })}
+                />
+                {errors.address && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="phone-supplier" className="mb-2 block">
+                  Phone <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="phone-supplier"
+                  type="text"
+                  placeholder="phone"
+                  {...register("phone", { required: true })}
+                />
+                {errors.phone && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="contact-supplier" className="mb-2 block">
+                  Contact <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="contact-supplier"
+                  type="text"
+                  placeholder="contact"
+                  {...register("contact", { required: true })}
+                />
+                {errors.contact && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="firstName-supplier" className="mb-2 block">
+                  First Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="firstName-supplier"
+                  type="text"
+                  placeholder="First Name"
+                  {...register("firstName", { required: true })}
+                />
+                {errors.firstName && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="lastName-supplier" className="mb-2 block">
+                  Last Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="lastName-supplier"
+                  type="text"
+                  placeholder="Last Name"
+                  {...register("lastName", { required: true })}
+                />
+                {errors.lastName && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="email-supplier" className="mb-2 block">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email-supplier"
+                  type="email"
+                  placeholder="email"
+                  {...register("email", { required: true })}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="authorizations-supplier" className="mb-2 block">
+                  Authorizations <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="authorizations-supplier"
+                  type="text"
+                  placeholder="Authorizations"
+                  {...register("authorizations", { required: true })}
+                />
+                {errors.authorizations && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="perRecordCost" className="mb-2 block">
+                  Per Record cost ($) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="perRecordCost"
+                  type="number"
+                  placeholder="Per Record cost ($)"
+                  {...register("perRecordCost", { required: true })}
+                />
+                {errors.perRecordCost && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="payoutSchedule-supplier" className="mb-2 block">
+                  Payout Schedule <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="payoutSchedule-supplier"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("payoutSchedule", { required: true })}
+                >
+                  <option value="" disabled>
+                    Select Payout Schedule
+                  </option>
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="bimonthly">Bimonthly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+                {errors.payoutSchedule && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="dataTypesAvailable-supplier" className="mb-2 block">
+                  Data Types Available <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="dataTypesAvailable-supplier"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("dataTypesAvailable", { required: true })}
+                >
+                  <option value="" disabled>
+                    Select Available Data Types
+                  </option>
+                  <option value="Web Form">Web Form</option>
+                  <option value="API">API</option>
+                  <option value="List">List</option>
+                </select>
+                {errors.dataTypesAvailable && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="dataOwnershipDuration-supplier" className="mb-2 block">
+                  Data ownership duration <span className="text-red-500">*</span>
+                </Label>
+                <select
+                  id="dataOwnershipDuration-supplier"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  {...register("dataOwnershipDuration", { required: true })}
+                >
+                  <option value="" disabled>
+                    Select Data ownership duration
+                  </option>
+                  <option value="30 days">30 days</option>
+                  <option value="90 days">90 days</option>
+                  <option value="1 year">1 year</option>
+                  <option value="Indefinite">Indefinite</option>
+                </select>
+                {errors.dataOwnershipDuration && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+
+              <div>
+                <Label className="mb-2 block">
+                  Authorized Programs <span className="text-red-500">*</span>
+                </Label>
+                <div className="space-y-3 p-4 border rounded-md">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="debt-supplier"
+                      type="checkbox"
+                      value="Debt"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      {...register("authorizedPrograms", { required: true })}
+                    />
+                    <Label htmlFor="debt-supplier" className="cursor-pointer font-normal">
+                      Debt
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="personal-loans-supplier"
+                      type="checkbox"
+                      value="Personal Loans"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      {...register("authorizedPrograms", { required: true })}
+                    />
+                    <Label htmlFor="personal-loans-supplier" className="cursor-pointer font-normal">
+                      Personal Loans
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      id="mortgages-supplier"
+                      type="checkbox"
+                      value="Mortgages"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      {...register("authorizedPrograms", { required: true })}
+                    />
+                    <Label htmlFor="mortgages-supplier" className="cursor-pointer font-normal">
+                      Mortgages
+                    </Label>
+                  </div>
+                </div>
+                {errors.authorizedPrograms && (
+                  <p className="text-red-500 text-xs mt-1">*This field is required</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Submit Button */}
+        <div className="flex justify-center">
+          <Button type="submit" size="lg" className="w-full max-w-md">
+            <UserPlus className="h-4 w-4 mr-2" />
             Add User
-          </button>
-        </form>
-      </div>
+          </Button>
+        </div>
+      </form>
     </div>
   );
 };
