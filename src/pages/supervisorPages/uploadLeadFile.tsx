@@ -43,6 +43,16 @@ const BASE_COLUMNS = [
   { id: "security_phrase", label: "Security Phrase", required: false },
   { id: "state", label: "State", required: false },
   { id: "title", label: "Title", required: false },
+]
+
+// Extra fields used only for Homebound campaign
+const HOMEBOUND_EXTRA_COLUMNS = [
+  { id: "mortgage_balance", label: "Mortgage Balance", required: false },
+  { id: "ltv", label: "LTV", required: false },
+  { id: "credit_grade", label: "Credit Grade", required: false },
+  { id: "interest_rate", label: "Interest Rate", required: false },
+  { id: "fico_score", label: "Fico Score", required: false },
+  { id: "ssn", label: "SSN", required: false },
   // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
   // { id: "rank", label: "Rank", required: false },
   // { id: "owner", label: "Owner", required: false },
