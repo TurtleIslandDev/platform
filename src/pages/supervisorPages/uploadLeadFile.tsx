@@ -20,7 +20,7 @@ import * as XLSX from "xlsx";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
-const PREDEFINED_COLUMNS = [
+const BASE_COLUMNS = [
   { id: "address1", label: "Address1", required: false },
   { id: "address2", label: "Address2", required: false },
   { id: "address3", label: "Address3", required: false },
@@ -43,6 +43,22 @@ const PREDEFINED_COLUMNS = [
   { id: "security_phrase", label: "Security Phrase", required: false },
   { id: "state", label: "State", required: false },
   { id: "title", label: "Title", required: false },
+  // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
+  // { id: "rank", label: "Rank", required: false },
+  // { id: "owner", label: "Owner", required: false },
+  // { id: "call_type", label: "Call Type", required: false },
+  // { id: "inbound_group", label: "Inbound Group", required: false },
+  // { id: "record_status", label: "Record Status", required: false },
+]
+
+// Extra fields used only for Homebound campaign
+const HOMEBOUND_EXTRA_COLUMNS = [
+  { id: "mortgage_balance", label: "Mortgage Balance", required: false },
+  { id: "ltv", label: "LTV", required: false },
+  { id: "credit_grade", label: "Credit Grade", required: false },
+  { id: "interest_rate", label: "Interest Rate", required: false },
+  { id: "fico_score", label: "Fico Score", required: false },
+  { id: "ssn", label: "SSN", required: false },
   // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
   // { id: "rank", label: "Rank", required: false },
   // { id: "owner", label: "Owner", required: false },
@@ -107,13 +123,21 @@ const UploadLeadFile = () => {
   const [hasNoHeaders, setHasNoHeaders] = useState(false)
   const [firstRowData, setFirstRowData] = useState<string[]>([])
   
+  // Get active columns based on selected campaign
+  const getCurrentColumns = () => {
+    if (campaignName === "Homebound") {
+      return [...BASE_COLUMNS, ...HOMEBOUND_EXTRA_COLUMNS]
+    }
+    return BASE_COLUMNS
+  }
+
   // Campaign confirmation modal state
   const [showCampaignConfirm, setShowCampaignConfirm] = useState(false)
   const [campaignConfirmText, setCampaignConfirmText] = useState("")
   const [campaignConfirmError, setCampaignConfirmError] = useState("")
 
   // Filter predefined columns based on search term
-  const filteredColumns = PREDEFINED_COLUMNS.filter(
+  const filteredColumns = getCurrentColumns().filter(
     (col) =>
       col.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
       col.id.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -158,13 +182,12 @@ const UploadLeadFile = () => {
         setCsvData(data)
         setFirstRowData(firstRowValues)
         
-        // Auto-map columns only if headers exist
-        if (!hasNoHeaders) {
-          const autoMappings = autoMapColumns(headers, PREDEFINED_COLUMNS)
-          setFieldMappings(autoMappings) // Pre-fill with suggestions
-        } else {
-          setFieldMappings({}) // Clear mappings for no-headers mode
-        }
+          if (!hasNoHeaders) {
+            const autoMappings = autoMapColumns(headers, getCurrentColumns())
+            setFieldMappings(autoMappings) 
+          } else {
+            setFieldMappings({}) 
+          }
         
         setErrors([])
       }
@@ -222,7 +245,7 @@ const UploadLeadFile = () => {
           
           // Auto-map columns only if headers exist
           if (!hasNoHeaders) {
-            const autoMappings = autoMapColumns(headers, PREDEFINED_COLUMNS)
+            const autoMappings = autoMapColumns(headers, getCurrentColumns())
             setFieldMappings(autoMappings) // Pre-fill with suggestions
           } else {
             setFieldMappings({}) // Clear mappings for no-headers mode
@@ -283,7 +306,7 @@ const UploadLeadFile = () => {
 
   // Validate required fields
   const validateMappings = () => {
-    const requiredFields = PREDEFINED_COLUMNS.filter((col) => col.required)
+    const requiredFields = getCurrentColumns().filter((col) => col.required)
     const mappedFields = Object.values(fieldMappings)
     const missingRequired = requiredFields.filter((field) => !mappedFields.includes(field.id))
 
@@ -1118,7 +1141,7 @@ const UploadLeadFile = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {PREDEFINED_COLUMNS.map((predefinedField) => {
+                  {getCurrentColumns().map((predefinedField) => {
                     const mappedCsvField = Object.keys(fieldMappings).find(
                       (csvField) => fieldMappings[csvField] === predefinedField.id,
                     )
@@ -1212,8 +1235,8 @@ const UploadLeadFile = () => {
                             {mappedPredefinedField ? (
                               <div className="flex items-center gap-2">
                                 <Badge variant="secondary" className="flex items-center gap-1">
-                                  {PREDEFINED_COLUMNS.find(col => col.id === mappedPredefinedField)?.label || mappedPredefinedField}
-                                  {PREDEFINED_COLUMNS.find(col => col.id === mappedPredefinedField)?.required && (
+                                  {getCurrentColumns().find(col => col.id === mappedPredefinedField)?.label || mappedPredefinedField}
+                                  {getCurrentColumns().find(col => col.id === mappedPredefinedField)?.required && (
                                     <span className="text-red-500 ml-1">*</span>
                                   )}
                                 </Badge>
@@ -1227,7 +1250,7 @@ const UploadLeadFile = () => {
                                   <SelectValue placeholder="Select predefined field..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {PREDEFINED_COLUMNS
+                                  {getCurrentColumns()
                                     .filter(
                                       (predefinedField) =>
                                         // Show if not mapped, or if it's currently mapped to this column
@@ -1250,7 +1273,7 @@ const UploadLeadFile = () => {
                   ) : (
                     // Original predefined field-based mapping UI (with headers)
                     <div className="space-y-4">
-                      {PREDEFINED_COLUMNS.map((predefinedField) => {
+                      {getCurrentColumns().map((predefinedField) => {
                         // Find which CSV field is mapped to this predefined field
                         const mappedCsvField = Object.keys(fieldMappings).find(
                           (csvField) => fieldMappings[csvField] === predefinedField.id,
