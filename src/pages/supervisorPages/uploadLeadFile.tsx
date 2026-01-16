@@ -57,6 +57,10 @@ const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
 // const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
+const isExcelFile = (filename: string): boolean => {
+  return /\.xlsx?$/i.test(filename)
+}
+
 const UploadLeadFile = () => {
   const navigate = useNavigate();
   const [csvFile, setCsvFile] = useState<File | null>(null)
@@ -239,9 +243,7 @@ const UploadLeadFile = () => {
     const file = event.target.files?.[0]
     if (!file) return
     
-    const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
-    
-    if (isXlsx) {
+    if (isExcelFile(file.name)) {
       parseXlsxFile(file, hasNoHeaders)
     } else {
       parseCsvFile(file, hasNoHeaders)
@@ -902,8 +904,7 @@ const UploadLeadFile = () => {
                       setIsDragging(false)
                       const file = e.dataTransfer.files?.[0]
                       if (file) {
-                        const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
-                        if (isXlsx) {
+                        if (isExcelFile(file.name)) {
                           parseXlsxFile(file, hasNoHeaders)
                         } else {
                           parseCsvFile(file, hasNoHeaders)
@@ -911,7 +912,7 @@ const UploadLeadFile = () => {
                       }
                     }}
                   >
-                    <Input id="csv-file" type="file" accept=".csv,.xlsx" onChange={handleFileUpload} className="pt-0 hidden" />
+                    <Input id="csv-file" type="file" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} className="pt-0 hidden" />
                     <label htmlFor="csv-file" className="cursor-pointer text-sm text-gray-600">
                       {csvFile ? `Selected: ${csvFile.name}` : "Click or drag & drop file here"}
                     </label>
@@ -926,8 +927,7 @@ const UploadLeadFile = () => {
                       setHasNoHeaders(checked as boolean)
                       // Re-parse file if already loaded
                       if (csvFile) {
-                        const isXlsx = csvFile.name.toLowerCase().endsWith('.xlsx')
-                        if (isXlsx) {
+                        if (isExcelFile(csvFile.name)) {
                           parseXlsxFile(csvFile, checked as boolean)
                         } else {
                           parseCsvFile(csvFile, checked as boolean)
