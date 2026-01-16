@@ -184,7 +184,7 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">Duplicate Check Scope</Label>
-                <p className="font-medium">{data.dup_check_scope || "N/A"}</p>
+                <p className="font-medium">{data.dup_check_scope && data.enabled_duplicate_check ? data.dup_check_scope : "None"}</p>
               </div>
               <div>
                 <Label className="text-sm font-medium text-muted-foreground">List ID</Label>

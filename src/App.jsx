@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { fetchWithAuth } from "./utils/fetchWithAuth";
 import { env } from "./config/env";
+import AdminRouteGuard from "./components/guards/AdminRouteGuard";
 import AgentSystemsTraining from "./pages/agentPages/AgentSystemsTraining";
 import InteractionGuidePage from "./pages/IG/InteractionGuidePage";
 import AddUserSupervisor from "./pages/supervisorPages/AddUserSupervisor";
@@ -199,28 +200,69 @@ function App() {
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/support" element={<SupportPage />} />
-            <Route path="/admin-navigation/add-user" element={<AddUser />} />
-            <Route path="/admin-navigation/roster" element={<Roster />} />
+            <Route 
+              path="/admin-navigation/add-user" 
+              element={
+                <AdminRouteGuard>
+                  <AddUser />
+                </AdminRouteGuard>
+              } 
+            />
+            <Route 
+              path="/admin-navigation/roster" 
+              element={
+                <AdminRouteGuard>
+                  <Roster />
+                </AdminRouteGuard>
+              } 
+            />
             <Route
               path="/admin-navigation/export-data"
-              element={<ExportDataPage />}
+              element={
+                <AdminRouteGuard>
+                  <ExportDataPage />
+                </AdminRouteGuard>
+              }
             />
             <Route
               path="/admin-navigation/create-template"
-              element={<CreateTemplatePage />}
+              element={
+                <AdminRouteGuard>
+                  <CreateTemplatePage />
+                </AdminRouteGuard>
+              }
             />
-            <Route path="/admin-navigation/data" element={<DataNavigation />} />
+            <Route 
+              path="/admin-navigation/data" 
+              element={
+                <AdminRouteGuard>
+                  <DataNavigation />
+                </AdminRouteGuard>
+              } 
+            />
             <Route
               path="/admin-navigation/buzzword-admin"
-              element={<BuzzWord />}
+              element={
+                <AdminRouteGuard>
+                  <BuzzWord />
+                </AdminRouteGuard>
+              }
             />
             <Route
               path="/admin-navigation/upload-lead-file"
-              element={<UploadLeadFile />}
+              element={
+                <AdminRouteGuard>
+                  <UploadLeadFile />
+                </AdminRouteGuard>
+              }
             />
             <Route
               path="/admin-navigation/upload-lead-file-queue"
-              element={<UploadLeadFileQueue />}
+              element={
+                <AdminRouteGuard>
+                  <UploadLeadFileQueue />
+                </AdminRouteGuard>
+              }
             />
             <Route
               path="/job/:jobId"
@@ -228,7 +270,11 @@ function App() {
             />
             <Route
               path="/admin-navigation/dnc-form"
-              element={<DNCForm />}
+              element={
+                <AdminRouteGuard>
+                  <DNCForm />
+                </AdminRouteGuard>
+              }
             />
             <Route
               path="/qc-and-supervisor-navigation/buzzword-supervisor"
@@ -239,7 +285,14 @@ function App() {
               element={<BuzzWordTrainee />}
             />
             <Route path="/three-circles" element={<ThreeCircleLayout />} />
-            <Route path="/admin-navigation" element={<AdminNavigation />} />
+            <Route 
+              path="/admin-navigation" 
+              element={
+                <AdminRouteGuard>
+                  <AdminNavigation />
+                </AdminRouteGuard>
+              } 
+            />
             <Route
               path="/performance-manager-navigation"
               element={<PerformanceManagerNavigation />}
@@ -247,15 +300,27 @@ function App() {
 
             <Route
               path="/admin-navigation/other-roles-access"
-              element={<OtherRolesAccessNavigation />}
+              element={
+                <AdminRouteGuard>
+                  <OtherRolesAccessNavigation />
+                </AdminRouteGuard>
+              }
             />
             <Route
               path="/admin-navigation/upload-data"
-              element={<UploadDataPage />}
+              element={
+                <AdminRouteGuard>
+                  <UploadDataPage />
+                </AdminRouteGuard>
+              }
             />
             <Route 
               path="/admin-navigation/data/contacts-dashboard"
-              element={<ContactsDashboard />}
+              element={
+                <AdminRouteGuard>
+                  <ContactsDashboard />
+                </AdminRouteGuard>
+              }
             />
             <Route path="bpo-navigation" element={<BpoNavigation />} />
             <Route
