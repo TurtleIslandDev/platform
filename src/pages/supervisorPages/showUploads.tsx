@@ -501,10 +501,48 @@ const ShowUploads = () => {
   const [selectedUpload, setSelectedUpload] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { token } = useSelector((state: any) => state.user);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
 
 
-  // Filter data based on search term, test mode, and campaign
+  // Fetch data from API with pagination only (no filtering)
+  const fetchUploadData = async () => {
+    setIsLoading(true);
+    try {
+      // Build query string with pagination only
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        sort: sortByOldest ? "asc" : "desc",
+      });
+
+      const response = await fetchWithAuth(
+        `${UPLOAD_URL}/guides/get-upload-history?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        const uploads = result.data.uploads || [];
+        setUploadData(uploads);
+        setHasMore(result.data.has_more || false);
+      } else {
+        console.error("Failed to fetch upload data");
+      }
+    } catch (error) {
+      console.error("Error fetching upload data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter data client-side based on filters
   useEffect(() => {
     let filtered = uploadData;
 
@@ -578,34 +616,10 @@ const ShowUploads = () => {
     setFilteredData(sorted);
   }, [uploadData, testModeFilter, campaignFilter, searchTerm, startDate, endDate, sortByOldest]);
 
-  // Fetch data from API
-  const fetchUploadData = async () => {
-    setIsLoading(true);
-    try {
-      // Replace with actual API endpoint
-      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/get-upload-history`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUploadData(data.data.reverse());
-      } else {
-        console.error("Failed to fetch upload data");
-      }
-    } catch (error) {
-      console.error("Error fetching upload data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load data on component mount
+  // Refetch when pagination or sort changes (not when filters change)
   useEffect(() => {
     fetchUploadData();
-  }, []);
+  }, [currentPage, sortByOldest]);
 
   // Format timestamp
   const formatTimestamp = (timestamp: string) => {
@@ -961,10 +975,15 @@ const ShowUploads = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {filteredData.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                <span className="ml-3 text-muted-foreground">Loading uploads...</span>
+              </div>
+            ) : filteredData.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading...</p>
+                <p className="text-muted-foreground">No uploads found matching your filters</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -1085,6 +1104,31 @@ const ShowUploads = () => {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+            
+            {/* Minimal Pagination Controls */}
+            {filteredData.length > 0 && (
+              <div className="flex items-center justify-center gap-4 py-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1 || isLoading}
+                >
+                  Prev
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={!hasMore || isLoading}
+                >
+                  Next
+                </Button>
               </div>
             )}
           </CardContent>
