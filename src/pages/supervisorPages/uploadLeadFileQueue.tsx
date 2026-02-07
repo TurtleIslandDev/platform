@@ -356,6 +356,7 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
@@ -407,6 +408,7 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
@@ -722,8 +724,9 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("upload_file_name", uploadFileName || csvFile?.name || `upload_${new Date().toISOString()}.csv`);
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
-      if (enableDuplicateCheck) {        
+      if (enableDuplicateCheck) {
         formData.append("duplicate_check_scope", duplicateCheckScope);
       }
 
@@ -734,7 +737,7 @@ const UploadLeadFileQueue = () => {
           formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
         }
       }
-      
+
       // Note: download_file is always false for queue-based processing
       // The processed file will be available for download on the progress page
       formData.append("download_file", JSON.stringify(false));
@@ -816,8 +819,9 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
-      if (enableDuplicateCheck) {        
+      if (enableDuplicateCheck) {
         formData.append("duplicate_check_scope", duplicateCheckScope);
       }
 

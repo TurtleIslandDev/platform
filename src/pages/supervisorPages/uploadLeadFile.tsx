@@ -54,23 +54,7 @@ const HOMEBOUND_EXTRA_COLUMNS = [
   { id: "fico_score", label: "Fico Score", required: false },
   { id: "ssn", label: "SSN", required: false },
   // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
-  // { id: "rank", label: "Rank", required: false },
-  // { id: "owner", label: "Owner", required: false },
-  // { id: "call_type", label: "Call Type", required: false },
-  // { id: "inbound_group", label: "Inbound Group", required: false },
-  // { id: "record_status", label: "Record Status", required: false },
-]
-
-// Extra fields used only for Homebound campaign
-const HOMEBOUND_EXTRA_COLUMNS = [
-  { id: "mortgage_balance", label: "Mortgage Balance", required: false },
-  { id: "ltv", label: "LTV", required: false },
-  { id: "credit_grade", label: "Credit Grade", required: false },
-  { id: "interest_rate", label: "Interest Rate", required: false },
-  { id: "fico_score", label: "Fico Score", required: false },
-  { id: "ssn", label: "SSN", required: false },
-  // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
-  // { id: "rank", label: "Rank", required: false },
+  // { id: "rank", label: "Rank", required: false },w
   // { id: "owner", label: "Owner", required: false },
   // { id: "call_type", label: "Call Type", required: false },
   // { id: "inbound_group", label: "Inbound Group", required: false },
@@ -366,6 +350,7 @@ const UploadLeadFile = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
@@ -398,7 +383,7 @@ const UploadLeadFile = () => {
   const handleStep1 = async () => {
     setStepStatus(prev => ({ ...prev, step1: 'loading' }))
     setModalError("")
-    
+
     try {
       if (!validateMappings()) {
         setStepStatus(prev => ({ ...prev, step1: 'error' }))
@@ -415,6 +400,7 @@ const UploadLeadFile = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
@@ -466,6 +452,7 @@ const UploadLeadFile = () => {
         duplicateFormData.append("source_id", sourceId || "");
         duplicateFormData.append("campaign_name", campaignName || "");
         duplicateFormData.append("vendor_lead_code", vendorLeadCode || "");
+        duplicateFormData.append("has_no_headers", JSON.stringify(hasNoHeaders));
         duplicateFormData.append("dup_check_scope", duplicateCheckScope);
 
         
@@ -540,6 +527,7 @@ const UploadLeadFile = () => {
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
       formData.append("upload_file_name", uploadFileName || "csv_file.csv");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
       // added duplicate check scope incase blob is not available and re-dedup check is needed
       formData.append("duplicate_check_scope", duplicateCheckScope || "");
@@ -741,8 +729,9 @@ const UploadLeadFile = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
-      if (enableDuplicateCheck) {        
+      if (enableDuplicateCheck) {
         formData.append("duplicate_check_scope", duplicateCheckScope);
         formData.append("enabled_duplicate_check", JSON.stringify(enableDuplicateCheck));
       }
