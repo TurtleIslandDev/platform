@@ -506,17 +506,36 @@ const ShowUploads = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
 
+  // Aggregates state
+  const [aggregateStats, setAggregateStats] = useState<{
+    total_uploads: number;
+    total_good_phone_count: number;
+  } | null>(null);
 
+  // Debounced search for aggregates (avoid hammering API on every keystroke)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  // Fetch data from API with pagination only (no filtering)
-  const fetchUploadData = async () => {
+  // Fetch data from API with pagination, optionally include aggregates
+  const fetchUploadData = async (includeAggregates = false, filterParams?: Record<string, string>) => {
     setIsLoading(true);
     try {
-      // Build query string with pagination only
       const params = new URLSearchParams({
         page: currentPage.toString(),
         sort: sortByOldest ? "asc" : "desc",
       });
+
+      if (includeAggregates) {
+        params.set("include_aggregates", "true");
+        if (filterParams) {
+          Object.entries(filterParams).forEach(([key, value]) => {
+            if (value) params.set(key, value);
+          });
+        }
+      }
 
       const response = await fetchWithAuth(
         `${UPLOAD_URL}/guides/get-upload-history?${params.toString()}`,
@@ -532,6 +551,10 @@ const ShowUploads = () => {
         const uploads = result.data.uploads || [];
         setUploadData(uploads);
         setHasMore(result.data.has_more || false);
+
+        if (result.data.aggregates) {
+          setAggregateStats(result.data.aggregates);
+        }
       } else {
         console.error("Failed to fetch upload data");
       }
@@ -616,10 +639,25 @@ const ShowUploads = () => {
     setFilteredData(sorted);
   }, [uploadData, testModeFilter, campaignFilter, searchTerm, startDate, endDate, sortByOldest]);
 
-  // Refetch when pagination or sort changes (not when filters change)
+  // Refetch records only when page or sort changes (no aggregates)
   useEffect(() => {
-    fetchUploadData();
+    fetchUploadData(false);
   }, [currentPage, sortByOldest]);
+
+  // Build filter params for aggregates API calls
+  const buildFilterParams = () => {
+    const params: Record<string, string> = {};
+    if (campaignFilter !== "all") params.campaign = campaignFilter;
+    if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return params;
+  };
+
+  // Fetch with aggregates on mount and when filters change
+  useEffect(() => {
+    fetchUploadData(true, buildFilterParams());
+  }, [campaignFilter, debouncedSearchTerm, startDate, endDate]);
 
   // Format timestamp
   const formatTimestamp = (timestamp: string) => {
@@ -666,9 +704,10 @@ const ShowUploads = () => {
 
   // Get total counts
   const getTotalStats = () => {
-    const total = filteredData.length;
-    const totalPhones = filteredData.reduce((sum: any, upload: any) => sum + (upload?.data?.good_phone_count || 0), 0);
-    
+    const total = aggregateStats?.total_uploads ?? filteredData.length;
+    const totalPhones = aggregateStats?.total_good_phone_count ?? filteredData.reduce((sum: any, upload: any) => sum + (upload?.data?.good_phone_count || 0), 0);
+    const totalCost = calculateCost(totalPhones);
+
     const testModeCount = filteredData.filter((upload: any) => {
       const testMode = upload?.data?.test_mode;
       if (typeof testMode === 'boolean') {
@@ -676,7 +715,7 @@ const ShowUploads = () => {
       }
       return testMode === "true";
     }).length;
-    
+
     const productionCount = filteredData.filter((upload: any) => {
       const testMode = upload?.data?.test_mode;
       if (typeof testMode === 'boolean') {
@@ -684,8 +723,6 @@ const ShowUploads = () => {
       }
       return testMode === "false";
     }).length;
-    
-    const totalCost = filteredData.reduce((sum: any, upload: any) => sum + calculateCost(upload?.data?.good_phone_count || 0), 0);
 
     return { total, totalPhones, testModeCount, productionCount, totalCost };
   };
@@ -842,7 +879,7 @@ const ShowUploads = () => {
               Filters
             </div>
             <Button 
-              onClick={fetchUploadData} 
+              onClick={() => fetchUploadData(true, buildFilterParams())}
               disabled={isLoading}
               variant="ghost"
               size="icon"
