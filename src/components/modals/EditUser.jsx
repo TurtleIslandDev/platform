@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Button,
-  Dialog,
-  DialogHeader,
-  DialogBody,
-} from "@material-tailwind/react";
 import { useDispatch, useSelector } from "react-redux";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
+import { Eye, EyeOff, UserCog, Loader2, Save } from "lucide-react";
 import useFetch from "../../features/hooks/useFetch";
 import { userPermissions } from "../../data/constants";
 import { setTobeEdited } from "../../features/slice/userSlice";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Checkbox } from "../ui/checkbox";
+
 export function EditUser({ open, setOpen }) {
   const dispatch = useDispatch();
   const { toBeEdited } = useSelector((state) => state.user);
@@ -19,15 +33,18 @@ export function EditUser({ open, setOpen }) {
   const [responseMessage, setResponseMessage] = useState("");
   const [permissions, setPermissions] = useState([]);
   const { postData, loading } = useFetch();
-  const handleBack = () => {
-    setOpen(!open);
+
+  const handleClose = () => {
+    setOpen(false);
   };
+
   const {
     register,
     handleSubmit,
     resetField,
     watch,
     setValue,
+    control,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -48,9 +65,14 @@ export function EditUser({ open, setOpen }) {
       authorizedPrograms: [],
       authorizations: toBeEdited?.newFields?.authorizations,
       userPermissions: toBeEdited?.newFields?.userPermissions,
+      subRole: "",
+      payStructure: "",
+      phonePassword: "",
     },
   });
-  var role = watch("role");
+
+  const role = watch("role");
+  const checkRole = watch("subRole");
 
   useEffect(() => {
     if (role) {
@@ -58,20 +80,17 @@ export function EditUser({ open, setOpen }) {
       setPermissions(newPermissions);
       setValue("userPermissions", newPermissions || []);
     }
-  }, [role]);
+  }, [role, setValue]);
 
-  const checkRole = watch("subRole");
   const onSubmit = async (data) => {
     const excludedKeys = ["role"];
     let newFields = {};
-    // Extract all keys except the excluded ones
     for (let key in data) {
       if (!excludedKeys.includes(key)) {
         newFields[key] = data[key];
-        delete data[key]; // Remove from the original object
+        delete data[key];
       }
     }
-    // Add newFields to the original object
     data.newFields = newFields;
     data.username = toBeEdited?.username;
     try {
@@ -88,10 +107,10 @@ export function EditUser({ open, setOpen }) {
         );
       }
     } catch (error) {
-      // add error handling here
       console.log(error);
     }
   };
+
   useEffect(() => {
     let fieldsToReset = [
       "company",
@@ -113,774 +132,491 @@ export function EditUser({ open, setOpen }) {
     for (let i = 0; i < fieldsToReset.length; i++) {
       resetField(fieldsToReset[i]);
     }
-  }, [checkRole]);
+  }, [checkRole, resetField]);
+
   useEffect(() => {
     let fieldsToReset = ["role", "password"];
     for (let i = 0; i < fieldsToReset.length; i++) {
       resetField(fieldsToReset[i]);
     }
-  }, [open]);
+  }, [open, resetField]);
+
   useEffect(() => {
-    // Only run this effect if responseMessage is set
     if (responseMessage) {
       const timer = setTimeout(() => {
-        setResponseMessage(""); // Reset the responseMessage after 5 seconds
-        handleBack();
+        setResponseMessage("");
+        handleClose();
       }, 5000);
-
-      // Cleanup the timeout if component unmounts or responseMessage changes
       return () => clearTimeout(timer);
     }
   }, [responseMessage]);
-  // useEffect(() => {
-  //   return () => {
-  //     dispatch(setTobeEdited({ data: {} }));
-  //   };
-  // }, []);
+
   return (
-    <>
-      <Dialog open={open} handler={setOpen} dismiss={{ outside: true }}>
-        <DialogHeader>Edit User</DialogHeader>
-        <DialogBody
-          className=""
-          style={{ height: "100%", maxHeight: "600px", overflowY: "scroll" }}
-        >
-          <p>
-            <span>Selected User: </span>
-            {toBeEdited?.username}
-          </p>
-          <form
-            className="w-full flex flex-col items-center"
-            onSubmit={handleSubmit(onSubmit)}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserCog className="h-5 w-5" />
+            Edit User
+          </DialogTitle>
+          <DialogDescription>
+            Editing user: <span className="font-semibold">{toBeEdited?.username}</span>
+          </DialogDescription>
+        </DialogHeader>
+
+        {responseMessage?.message && (
+          <div
+            className={`p-3 rounded-md text-sm ${
+              responseMessage?.status === "success"
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : responseMessage?.status === "error"
+                ? "bg-red-50 text-red-700 border border-red-200"
+                : ""
+            }`}
           >
-            {responseMessage?.message &&
-              (responseMessage?.status === "success" ? (
-                <p className="text-green-400">{responseMessage?.message}</p>
-              ) : responseMessage?.status === "error" ? (
-                <p className="text-red-400">{responseMessage?.message}</p>
-              ) : null)}
-            <div className="w-full mb-8">
-              <p className="text-2xl text-[#222] mb-2">Select User Role</p>
-              <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                <select
-                  className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                  placeholder="Password"
-                  {...register("role", { required: true })}
-                >
-                  <option value="" disabled selected>
-                    Select User Role
-                  </option>
-                  <option value="agent">Agent</option>
-                  <option value="channelManager">Channel Manager</option>
-                  <option value="dataManager">Data Manager</option>
-                  <option value="salesManager">Sales Manager</option>
-                  <option value="programManager">Program Manager</option>
-                  <option value="teamLead">Team Lead</option>
-                  <option value="supervisor">Supervisor</option>
-                  <option value="performanceManager">
-                    Performance Manager
-                  </option>
-                  <option value="admin">Admin</option>
-                  <option value="programOwner">Program Owner</option>
-                  <option value="bpo">BPO</option>
-                  <option value="dataVendor">Data Vendor</option>
-                  <option value="broadcastCustomer">Broadcast Customer</option>
-                  <option value="trainee">Trainee</option>
-                  <option value="applicant">Applicant</option>
-                  <option value="internal">Internal</option>
-                  <option value="client">Client</option>
-                  <option value="closer">Closer</option>
-                </select>
-              </label>
-              {errors.role && (
-                <span className="text-right text-red-500 text-xs">
-                  *This field is required
-                </span>
+            {responseMessage?.message}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* User Role Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="role">User Role</Label>
+            <Controller
+              name="role"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select User Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agent">Agent</SelectItem>
+                    <SelectItem value="channelManager">Channel Manager</SelectItem>
+                    <SelectItem value="dataManager">Data Manager</SelectItem>
+                    <SelectItem value="salesManager">Sales Manager</SelectItem>
+                    <SelectItem value="programManager">Program Manager</SelectItem>
+                    <SelectItem value="teamLead">Team Lead</SelectItem>
+                    <SelectItem value="supervisor">Supervisor</SelectItem>
+                    <SelectItem value="performanceManager">Performance Manager</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="programOwner">Program Owner</SelectItem>
+                    <SelectItem value="bpo">BPO</SelectItem>
+                    <SelectItem value="dataVendor">Data Vendor</SelectItem>
+                    <SelectItem value="broadcastCustomer">Broadcast Customer</SelectItem>
+                    <SelectItem value="trainee">Trainee</SelectItem>
+                    <SelectItem value="applicant">Applicant</SelectItem>
+                    <SelectItem value="internal">Internal</SelectItem>
+                    <SelectItem value="client">Client</SelectItem>
+                    <SelectItem value="closer">Closer</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.role && (
+              <span className="text-sm text-red-500">*This field is required</span>
+            )}
+          </div>
+
+          {/* Sub Role for Data Vendor */}
+          {role === "dataVendor" && (
+            <div className="space-y-2">
+              <Label htmlFor="subRole">Sub Role</Label>
+              <Controller
+                name="subRole"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Sub Role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="partner">Partner</SelectItem>
+                      <SelectItem value="supplier">Supplier</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.subRole && (
+                <span className="text-sm text-red-500">*This field is required</span>
               )}
             </div>
-            {role === "dataVendor" &&
-              (checkRole === "partner" || "supplier") && (
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">Select Sub Role</p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Select User Role"
-                      {...register("subRole", { required: true })}
-                    >
-                      <option value="" disabled selected>
-                        Select Sub User Role
-                      </option>
-                      <option value="partner">Partner</option>
-                      <option value="supplier">Supplier</option>
-                    </select>
-                  </label>
-                  {errors.subRole && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-              )}
-            <div className="w-full mb-5">
-              <p className="text-2xl text-[#222] mb-2">First Name</p>
-              <label className="input input-bordered flex items-center gap-2 ">
-                <input
-                  {...register("firstName", { required: true })}
-                  type="text"
-                  className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                  placeholder="First Name"
-                />
-              </label>
+          )}
+
+          {/* Basic Info - Always Shown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                placeholder="First Name"
+                {...register("firstName", { required: true })}
+              />
               {errors.firstName && (
-                <span className="text-right text-red-500 text-xs">
-                  *This field is required
-                </span>
+                <span className="text-sm text-red-500">*This field is required</span>
               )}
             </div>
 
-            <div className="w-full mb-5">
-              <p className="text-2xl text-[#222] mb-2">Last Name</p>
-              <label className="input input-bordered flex items-center gap-2 ">
-                <input
-                  {...register("lastName", { required: true })}
-                  type="text"
-                  className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                  placeholder="Last Name"
-                />
-              </label>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                placeholder="Last Name"
+                {...register("lastName", { required: true })}
+              />
               {errors.lastName && (
-                <span className="text-right text-red-500 text-xs">
-                  *This field is required
-                </span>
+                <span className="text-sm text-red-500">*This field is required</span>
               )}
             </div>
-            <div className="w-full mb-5">
-              <p className="text-2xl text-[#222] mb-2">Email</p>
-              <label className="input input-bordered flex items-center gap-2 ">
-                <input
-                  {...register("email", { required: true })}
-                  type="text"
-                  className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                  placeholder="email"
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Email"
+              {...register("email", { required: true })}
+            />
+            {errors.email && (
+              <span className="text-sm text-red-500">*This field is required</span>
+            )}
+          </div>
+
+          {/* Agent-specific fields */}
+          {role === "agent" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="Phone"
+                  {...register("phone", { required: true })}
                 />
-              </label>
-              {errors.email && (
-                <span className="text-right text-red-500 text-xs">
-                  *This field is required
-                </span>
+                {errors.phone && (
+                  <span className="text-sm text-red-500">*This field is required</span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phonePassword">Phone Password</Label>
+                <div className="relative">
+                  <Input
+                    id="phonePassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Phone Password"
+                    className="pr-10"
+                    {...register("phonePassword", { required: true })}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                {errors.phonePassword && (
+                  <span className="text-sm text-red-500">*This field is required</span>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="payStructure">Pay Structure</Label>
+                <Controller
+                  name="payStructure"
+                  control={control}
+                  rules={{ required: true }}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Pay Structure" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="commission">Commission</SelectItem>
+                        <SelectItem value="hourly">Hourly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.payStructure && (
+                  <span className="text-sm text-red-500">*This field is required</span>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Partner-specific fields */}
+          {checkRole === "partner" && role === "dataVendor" && (
+            <DataVendorFields
+              type="partner"
+              register={register}
+              errors={errors}
+              control={control}
+            />
+          )}
+
+          {/* Supplier-specific fields */}
+          {checkRole === "supplier" && role === "dataVendor" && (
+            <DataVendorFields
+              type="supplier"
+              register={register}
+              errors={errors}
+              control={control}
+            />
+          )}
+
+          {/* User Permissions */}
+          <div className="space-y-3">
+            <Label>User Permissions</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 border border-gray-200 rounded-md bg-gray-50">
+              {permissions?.map((permission, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`permission-${index}`}
+                    value={permission}
+                    {...register("userPermissions")}
+                  />
+                  <Label
+                    htmlFor={`permission-${index}`}
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {permission}
+                  </Label>
+                </div>
+              ))}
+              {(!permissions || permissions.length === 0) && (
+                <p className="text-sm text-gray-500 col-span-2">
+                  Select a role to view available permissions
+                </p>
               )}
             </div>
-            {role === "agent" && (
-              <>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Phone</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("phone", { required: true })}
-                      type="number"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="phone"
-                    />
-                  </label>
-                  {errors.phone && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">Phone Password</p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Phone Password"
-                      {...register("phonePassword", { required: true })}
-                    />
-                    <svg
-                      className="absolute right-5 cursor-pointer"
-                      width={29}
-                      height={18}
-                      viewBox="0 0 29 18"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      onClick={() => {
-                        setShowPassword(!showPassword);
-                      }}
-                    >
-                      <path
-                        d="M18.6332 9.10754C18.6332 11.38 16.7103 13.2222 14.3383 13.2222C11.9664 13.2222 10.0435 11.38 10.0435 9.10754C10.0435 6.83504 11.9664 4.99286 14.3383 4.99286C16.7103 4.99284 18.6332 6.83507 18.6332 9.10754ZM14.3461 0.540161C11.8902 0.551055 9.34461 1.14893 6.93486 2.29359C5.14564 3.1785 3.40196 4.42698 1.88836 5.96797C1.14495 6.75459 0.196758 7.89361 0.043457 9.10888C0.0615737 10.1616 1.19077 11.4609 1.88836 12.2498C3.30773 13.7303 5.006 14.9439 6.93486 15.9251C9.18207 17.0157 11.6694 17.6436 14.3461 17.6785C16.8043 17.6675 19.3494 17.0627 21.7565 15.9251C23.5457 15.0402 25.2902 13.7908 26.8039 12.2498C27.5472 11.4632 28.4954 10.3242 28.6488 9.10888C28.6306 8.05618 27.5014 6.75678 26.8039 5.96792C25.3845 4.48745 23.6853 3.27476 21.7565 2.29355C19.5104 1.20378 17.0169 0.580185 14.3461 0.540161ZM14.3443 2.66763C18.0658 2.66763 21.0826 5.55186 21.0826 9.10981C21.0826 12.6677 18.0658 15.552 14.3443 15.552C10.6228 15.552 7.60596 12.6677 7.60596 9.10981C7.60596 5.55186 10.6228 2.66763 14.3443 2.66763Z"
-                        fill="#999999"
-                      />
-                    </svg>
-                  </label>
-                  {errors.phonePassword && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Select Pay Structure
-                  </p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Password"
-                      {...register("payStructure", { required: true })}
-                    >
-                      <option value="" disabled selected>
-                        Select Pay Structure
-                      </option>
-                      <option value="commission">Commission</option>
-                      <option value="hourly">Hourly</option>
-                    </select>
-                  </label>
-                  {errors.payStructure && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
-            {checkRole === "partner" && role === "dataVendor" && (
-              <div className="w-full">
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Company</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("company", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="company"
-                    />
-                  </label>
-                  {errors.company && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Address</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("address", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="address"
-                    />
-                  </label>
-                  {errors.address && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Phone</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("phone", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="phone"
-                    />
-                  </label>
-                  {errors.phone && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Contact</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("contact", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="contact"
-                    />
-                  </label>
-                  {errors.contact && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
+          </div>
 
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Authorizations</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("authorizations", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Authorizations"
-                    />
-                  </label>
-                  {errors.authorizations && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                {/* Revenue Share split % */}
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Revenue share split (%)
-                  </p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("revenueShareSplit", { required: true })}
-                      type="number"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Revenue share split %"
-                    />
-                  </label>
-                  {errors.revenueShareSplit && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">Payout Schedule</p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Password"
-                      {...register("payoutSchedule", { required: true })}
-                    >
-                      {" "}
-                      <option value="" disabled selected>
-                        Select Payout Schedule
-                      </option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="bimonthly">Bimonthly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                  </label>
-                  {errors.payoutSchedule && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Data Types Available
-                  </p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Password"
-                      {...register("dataTypesAvailable", { required: true })}
-                    >
-                      <option value="" disabled selected>
-                        Select Available Data Types
-                      </option>
-                      <option value="Web Form">Web Form</option>
-                      <option value="API">API</option>
-                      <option value="List">List</option>
-                    </select>
-                  </label>
-                  {errors.dataTypesAvailable && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Data ownership duration
-                  </p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Password"
-                      {...register("dataOwnershipDuration", { required: true })}
-                    >
-                      <option value="" disabled selected>
-                        Select Data ownership duration
-                      </option>
-                      <option value="30 days">30 days</option>
-                      <option value="90 days">90 days</option>
-                      <option value="1 year">1 year</option>
-                      <option value="Indefinite">Indefinite</option>
-                    </select>
-                  </label>
-                  {errors.dataOwnershipDuration && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Authorized Programs
-                  </p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <div>
-                      <label>
-                        <input
-                          {...register("authorizedPrograms", {
-                            required: true,
-                          })}
-                          type="checkbox"
-                          value="Debt"
-                        />
-                        Debt
-                      </label>
-                    </div>
-                    <div>
-                      <label>
-                        <input
-                          {...register("authorizedPrograms", {
-                            required: true,
-                          })}
-                          type="checkbox"
-                          value="Personal Loans"
-                        />
-                        Personal Loans
-                      </label>
-                    </div>
-                    <div>
-                      <label>
-                        <input
-                          {...register("authorizedPrograms", {
-                            required: true,
-                          })}
-                          type="checkbox"
-                          value="Mortgages"
-                        />
-                        Mortgages
-                      </label>
-                    </div>
-                  </label>
-                  {errors.authorizedPrograms && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-              </div>
-            )}
-            {checkRole === "supplier" && role === "dataVendor" && (
-              <div className="w-full">
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Company</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("company", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="company"
-                    />
-                  </label>
-                  {errors.company && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Address</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("address", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="address"
-                    />
-                  </label>
-                  {errors.address && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Phone</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("phone", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="phone"
-                    />
-                  </label>
-                  {errors.phone && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Contact</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("contact", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="contact"
-                    />
-                  </label>
-                  {errors.contact && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">First Name</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("firstName", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="First Name"
-                    />
-                  </label>
-                  {errors.firstName && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Update User
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Last Name</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("lastName", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Last Name"
-                    />
-                  </label>
-                  {errors.lastName && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Email</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("email", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="email"
-                    />
-                  </label>
-                  {errors.email && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">Authorizations</p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("authorizations", { required: true })}
-                      type="text"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Authorizations"
-                    />
-                  </label>
-                  {errors.authorizations && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                {/* Per Record cost ($)*/}
-                <div className="w-full mb-5">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Per Record cost ($)
-                  </p>
-                  <label className="input input-bordered flex items-center gap-2 ">
-                    <input
-                      {...register("perRecordCost", { required: true })}
-                      type="number"
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Per Record cost ($)"
-                    />
-                  </label>
-                  {errors.perRecordCost && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">Payout Schedule</p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Password"
-                      {...register("payoutSchedule", { required: true })}
-                    >
-                      {" "}
-                      <option value="" disabled selected>
-                        Select Payout Schedule
-                      </option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="bimonthly">Bimonthly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                  </label>
-                  {errors.payoutSchedule && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Data Types Available
-                  </p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Password"
-                      {...register("dataTypesAvailable", { required: true })}
-                    >
-                      <option value="" disabled selected>
-                        Select Available Data Types
-                      </option>
-                      <option value="Web Form">Web Form</option>
-                      <option value="API">API</option>
-                      <option value="List">List</option>
-                    </select>
-                  </label>
-                  {errors.dataTypesAvailable && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Data ownership duration
-                  </p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <select
-                      className="grow h-16 border border-[#cccccc] rounded pl-5 focus:outline-none"
-                      placeholder="Password"
-                      {...register("dataOwnershipDuration", { required: true })}
-                    >
-                      <option value="" disabled selected>
-                        Select Data ownership duration
-                      </option>
-                      <option value="30 days">30 days</option>
-                      <option value="90 days">90 days</option>
-                      <option value="1 year">1 year</option>
-                      <option value="Indefinite">Indefinite</option>
-                    </select>
-                  </label>
-                  {errors.dataOwnershipDuration && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-                <div className="w-full mb-8">
-                  <p className="text-2xl text-[#222] mb-2">
-                    Authorized Programs
-                  </p>
-                  <label className="input input-bordered flex bg-transparent items-center gap-2 relative">
-                    <div>
-                      <label>
-                        <input
-                          {...register("authorizedPrograms", {
-                            required: true,
-                          })}
-                          type="checkbox"
-                          value="Debt"
-                        />
-                        Debt
-                      </label>
-                    </div>
-                    <div>
-                      <label>
-                        <input
-                          {...register("authorizedPrograms", {
-                            required: true,
-                          })}
-                          type="checkbox"
-                          value="Personal Loans"
-                        />
-                        Personal Loans
-                      </label>
-                    </div>
-                    <div>
-                      <label>
-                        <input
-                          {...register("authorizedPrograms", {
-                            required: true,
-                          })}
-                          type="checkbox"
-                          value="Mortgages"
-                        />
-                        Mortgages
-                      </label>
-                    </div>
-                  </label>
-                  {errors.authorizedPrograms && (
-                    <span className="text-right text-red-500 text-xs">
-                      *This field is required
-                    </span>
-                  )}
-                </div>
-              </div>
+// Extracted component for Data Vendor fields to reduce repetition
+function DataVendorFields({ type, register, errors, control }) {
+  return (
+    <div className="space-y-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+      <h3 className="font-medium text-sm text-gray-500 uppercase tracking-wide">
+        {type === "partner" ? "Partner Details" : "Supplier Details"}
+      </h3>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="company">Company</Label>
+          <Input
+            id="company"
+            placeholder="Company"
+            {...register("company", { required: true })}
+          />
+          {errors.company && (
+            <span className="text-sm text-red-500">*This field is required</span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="address">Address</Label>
+          <Input
+            id="address"
+            placeholder="Address"
+            {...register("address", { required: true })}
+          />
+          {errors.address && (
+            <span className="text-sm text-red-500">*This field is required</span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone</Label>
+          <Input
+            id="phone"
+            placeholder="Phone"
+            {...register("phone", { required: true })}
+          />
+          {errors.phone && (
+            <span className="text-sm text-red-500">*This field is required</span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="contact">Contact</Label>
+          <Input
+            id="contact"
+            placeholder="Contact"
+            {...register("contact", { required: true })}
+          />
+          {errors.contact && (
+            <span className="text-sm text-red-500">*This field is required</span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="authorizations">Authorizations</Label>
+        <Input
+          id="authorizations"
+          placeholder="Authorizations"
+          {...register("authorizations", { required: true })}
+        />
+        {errors.authorizations && (
+          <span className="text-sm text-red-500">*This field is required</span>
+        )}
+      </div>
+
+      {type === "partner" ? (
+        <div className="space-y-2">
+          <Label htmlFor="revenueShareSplit">Revenue Share Split (%)</Label>
+          <Input
+            id="revenueShareSplit"
+            type="number"
+            placeholder="Revenue share split %"
+            {...register("revenueShareSplit", { required: true })}
+          />
+          {errors.revenueShareSplit && (
+            <span className="text-sm text-red-500">*This field is required</span>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <Label htmlFor="perRecordCost">Per Record Cost ($)</Label>
+          <Input
+            id="perRecordCost"
+            type="number"
+            placeholder="Per Record cost ($)"
+            {...register("perRecordCost", { required: true })}
+          />
+          {errors.perRecordCost && (
+            <span className="text-sm text-red-500">*This field is required</span>
+          )}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="payoutSchedule">Payout Schedule</Label>
+          <Controller
+            name="payoutSchedule"
+            control={control}
+            rules={{ required: true }}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Schedule" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="bimonthly">Bimonthly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
             )}
-            <div className="w-full mb-8">
-              <p className="text-2xl text-[#222] mb-2">User Permissions</p>
-              <div className="input input-bordered flex bg-transparent gap-2 relative flex-col items-start">
-                {permissions?.map((permission, index) => {
-                  return (
-                    <label key={index}>
-                      <input
-                        {...register("userPermissions", {})}
-                        type="checkbox"
-                        value={permission}
-                        className="mr-3"
-                      />
-                      {permission}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <Button
-                variant="text"
-                color="red"
-                onClick={handleBack}
-                className="mr-1"
+          />
+          {errors.payoutSchedule && (
+            <span className="text-sm text-red-500">*Required</span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dataTypesAvailable">Data Types Available</Label>
+          <Controller
+            name="dataTypesAvailable"
+            control={control}
+            rules={{ required: true }}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Web Form">Web Form</SelectItem>
+                  <SelectItem value="API">API</SelectItem>
+                  <SelectItem value="List">List</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.dataTypesAvailable && (
+            <span className="text-sm text-red-500">*Required</span>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="dataOwnershipDuration">Ownership Duration</Label>
+          <Controller
+            name="dataOwnershipDuration"
+            control={control}
+            rules={{ required: true }}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30 days">30 days</SelectItem>
+                  <SelectItem value="90 days">90 days</SelectItem>
+                  <SelectItem value="1 year">1 year</SelectItem>
+                  <SelectItem value="Indefinite">Indefinite</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.dataOwnershipDuration && (
+            <span className="text-sm text-red-500">*Required</span>
+          )}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Authorized Programs</Label>
+        <div className="flex flex-wrap gap-4 p-3 border rounded-md">
+          {["Debt", "Personal Loans", "Mortgages"].map((program) => (
+            <div key={program} className="flex items-center space-x-2">
+              <Checkbox
+                id={`program-${program}`}
+                value={program}
+                {...register("authorizedPrograms", { required: true })}
+              />
+              <Label
+                htmlFor={`program-${program}`}
+                className="text-sm font-normal cursor-pointer"
               >
-                <span>Back</span>
-              </Button>
-              <button
-                type="submit"
-                className="bg-[#1E40AF] rounded-[60px] py-4 px-10 text-white font-bold text-xl max-w-56"
-              >
-                Update User
-              </button>
+                {program}
+              </Label>
             </div>
-          </form>
-        </DialogBody>
-      </Dialog>
-    </>
+          ))}
+        </div>
+        {errors.authorizedPrograms && (
+          <span className="text-sm text-red-500">*At least one program is required</span>
+        )}
+      </div>
+    </div>
   );
 }
