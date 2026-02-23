@@ -501,10 +501,71 @@ const ShowUploads = () => {
   const [selectedUpload, setSelectedUpload] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { token } = useSelector((state: any) => state.user);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
 
+  // Aggregates state
+  const [aggregateStats, setAggregateStats] = useState<{
+    total_uploads: number;
+    total_good_phone_count: number;
+  } | null>(null);
 
+  // Debounced search for aggregates (avoid hammering API on every keystroke)
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 400);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
-  // Filter data based on search term, test mode, and campaign
+  // Fetch data from API with pagination, optionally include aggregates
+  const fetchUploadData = async (includeAggregates = false, filterParams?: Record<string, string>) => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        sort: sortByOldest ? "asc" : "desc",
+      });
+
+      if (includeAggregates) {
+        params.set("include_aggregates", "true");
+        if (filterParams) {
+          Object.entries(filterParams).forEach(([key, value]) => {
+            if (value) params.set(key, value);
+          });
+        }
+      }
+
+      const response = await fetchWithAuth(
+        `${UPLOAD_URL}/guides/get-upload-history?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        const uploads = result.data.uploads || [];
+        setUploadData(uploads);
+        setHasMore(result.data.has_more || false);
+
+        if (result.data.aggregates) {
+          setAggregateStats(result.data.aggregates);
+        }
+      } else {
+        console.error("Failed to fetch upload data");
+      }
+    } catch (error) {
+      console.error("Error fetching upload data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter data client-side based on filters
   useEffect(() => {
     let filtered = uploadData;
 
@@ -578,34 +639,25 @@ const ShowUploads = () => {
     setFilteredData(sorted);
   }, [uploadData, testModeFilter, campaignFilter, searchTerm, startDate, endDate, sortByOldest]);
 
-  // Fetch data from API
-  const fetchUploadData = async () => {
-    setIsLoading(true);
-    try {
-      // Replace with actual API endpoint
-      const response = await fetchWithAuth(`${UPLOAD_URL}/guides/get-upload-history`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  // Refetch records only when page or sort changes (no aggregates)
+  useEffect(() => {
+    fetchUploadData(false);
+  }, [currentPage, sortByOldest]);
 
-      if (response.ok) {
-        const data = await response.json();
-        setUploadData(data.data.reverse());
-      } else {
-        console.error("Failed to fetch upload data");
-      }
-    } catch (error) {
-      console.error("Error fetching upload data:", error);
-    } finally {
-      setIsLoading(false);
-    }
+  // Build filter params for aggregates API calls
+  const buildFilterParams = () => {
+    const params: Record<string, string> = {};
+    if (campaignFilter !== "all") params.campaign = campaignFilter;
+    if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    return params;
   };
 
-  // Load data on component mount
+  // Fetch with aggregates on mount and when filters change
   useEffect(() => {
-    fetchUploadData();
-  }, []);
+    fetchUploadData(true, buildFilterParams());
+  }, [campaignFilter, debouncedSearchTerm, startDate, endDate]);
 
   // Format timestamp
   const formatTimestamp = (timestamp: string) => {
@@ -652,9 +704,10 @@ const ShowUploads = () => {
 
   // Get total counts
   const getTotalStats = () => {
-    const total = filteredData.length;
-    const totalPhones = filteredData.reduce((sum: any, upload: any) => sum + (upload?.data?.good_phone_count || 0), 0);
-    
+    const total = aggregateStats?.total_uploads ?? filteredData.length;
+    const totalPhones = aggregateStats?.total_good_phone_count ?? filteredData.reduce((sum: any, upload: any) => sum + (upload?.data?.good_phone_count || 0), 0);
+    const totalCost = calculateCost(totalPhones);
+
     const testModeCount = filteredData.filter((upload: any) => {
       const testMode = upload?.data?.test_mode;
       if (typeof testMode === 'boolean') {
@@ -662,7 +715,7 @@ const ShowUploads = () => {
       }
       return testMode === "true";
     }).length;
-    
+
     const productionCount = filteredData.filter((upload: any) => {
       const testMode = upload?.data?.test_mode;
       if (typeof testMode === 'boolean') {
@@ -670,8 +723,6 @@ const ShowUploads = () => {
       }
       return testMode === "false";
     }).length;
-    
-    const totalCost = filteredData.reduce((sum: any, upload: any) => sum + calculateCost(upload?.data?.good_phone_count || 0), 0);
 
     return { total, totalPhones, testModeCount, productionCount, totalCost };
   };
@@ -828,7 +879,7 @@ const ShowUploads = () => {
               Filters
             </div>
             <Button 
-              onClick={fetchUploadData} 
+              onClick={() => fetchUploadData(true, buildFilterParams())}
               disabled={isLoading}
               variant="ghost"
               size="icon"
@@ -961,10 +1012,15 @@ const ShowUploads = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {filteredData.length === 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+                <span className="ml-3 text-muted-foreground">Loading uploads...</span>
+              </div>
+            ) : filteredData.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Loading...</p>
+                <p className="text-muted-foreground">No uploads found matching your filters</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -1085,6 +1141,31 @@ const ShowUploads = () => {
                     ))}
                   </TableBody>
                 </Table>
+              </div>
+            )}
+            
+            {/* Minimal Pagination Controls */}
+            {filteredData.length > 0 && (
+              <div className="flex items-center justify-center gap-4 py-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1 || isLoading}
+                >
+                  Prev
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={!hasMore || isLoading}
+                >
+                  Next
+                </Button>
               </div>
             )}
           </CardContent>
