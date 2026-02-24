@@ -120,7 +120,7 @@ const mockUploadData = [
 ];
 
 // Upload Details Modal Component
-const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: boolean; onClose: () => void }) => {
+const UploadDetailsModal = ({ upload, isOpen, onClose, showTestMode }: { upload: any; isOpen: boolean; onClose: () => void; showTestMode: boolean }) => {
   const downloadFile = (filename: string, category: string) => {
     if (!filename) return;
     
@@ -250,6 +250,12 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                         <p className="text-xl font-bold text-gray-600">{data.invalid_count || 0}</p>
                       </div>
                     )}
+                    { showTestMode && data.internal_scrubbing_count != null && (
+                      <div className="text-center p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <p className="text-xs text-muted-foreground">Internal Scrubbing</p>
+                        <p className="text-xl font-bold text-indigo-600">{data.internal_scrubbing_count || 0}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -278,8 +284,15 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                       )}
                       {data.count_after_checking_for_dnc_numbers !== undefined && (
                         <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <span className="text-sm">After DNC Check</span>
+                          <span className="text-sm">After System DNC Check</span>
                           <span className="font-medium">{data.count_after_checking_for_dnc_numbers}</span>
+                        </div>
+                      )}
+
+                      {(showTestMode && data.count_after_internal_scrubbing !== undefined) && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After Internal Scrubbing</span>
+                          <span className="font-medium">{data.count_after_internal_scrubbing}</span>
                         </div>
                       )}
                       {data.count_after_black_list_dnc !== undefined && (
@@ -288,6 +301,8 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                           <span className="font-medium">{data.count_after_black_list_dnc}</span>
                         </div>
                       )}
+
+                      
                     </div>
                   </div>
                 )}
@@ -470,6 +485,26 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                     </Button>
                   </div>
                 )}
+
+                { showTestMode && data.internal_scrubbing_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg border-indigo-200 bg-indigo-50">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-indigo-600" />
+                      <div>
+                        <p className="font-medium">Internal Scrubbing</p>
+                        <p className="text-sm text-muted-foreground">Records removed by internal scrubbing (test mode only)</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.internal_scrubbing_filename, "internal_scrubbing")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -496,7 +531,7 @@ const ShowUploads = () => {
   const [endDate, setEndDate] = useState<string>("");
   const [sortByOldest, setSortByOldest] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showTestMode, setShowTestMode] = useState(false);   
+  const [showTestMode, setShowTestMode] = useState(true);   
   const [viewMode, setViewMode] = useState<"table" | "breakdown">("table");
   const [selectedUpload, setSelectedUpload] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -762,7 +797,7 @@ const ShowUploads = () => {
             >
               <FileCheck className="h-4 w-4" />
               View Jobs
-            </Button>
+            </Button> 
             <Button 
               onClick={() => navigate("/qc-and-supervisor-navigation/upload-lead-file")}
               variant="outline"
@@ -1274,6 +1309,7 @@ const ShowUploads = () => {
         upload={selectedUpload} 
         isOpen={isModalOpen} 
         onClose={handleModalClose} 
+        showTestMode={showTestMode}
       />
     </div>
   );

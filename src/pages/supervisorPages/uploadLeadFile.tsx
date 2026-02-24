@@ -62,8 +62,8 @@ const HOMEBOUND_EXTRA_COLUMNS = [
 
 // 
 // const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
-// const UPLOAD_URL = "http://127.0.0.1:3173";
+// const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
+const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
 const UploadLeadFile = () => {
@@ -925,7 +925,7 @@ const UploadLeadFile = () => {
                   checked={skipDncCheck}
                   onCheckedChange={(checked) => setSkipDncCheck(checked as boolean)}
                 />
-                <Label htmlFor="skip-dnc-check">Skip DNC Check</Label>
+                <Label htmlFor="skip-dnc-check">Skip System DNC Check</Label>
               </div>
 
               <div className="flex items-center space-x-2" >
