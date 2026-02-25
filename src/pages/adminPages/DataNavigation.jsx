@@ -8,6 +8,7 @@ import AgentPerformanceSvg from "../../assets/SVGs/agentScreen/AgentPerformanceS
 import Cookies from "universal-cookie";
 import AutomateSvg from "../../assets/SVGs/globalSvgs/AutomateSvg";
 import TraineeSVG from "./../../assets/SVGs/TraineeSVG";
+import { env } from "../../config/env";
 
 const DataNavigation = () => {
   const navigate = useNavigate();
@@ -45,8 +46,7 @@ const DataNavigation = () => {
         >
           <div
             onClick={() => {
-              window.location.href =
-                "https://vici-lp1.itsbuzzmarketing.com/vicidial/admin_listloader_fourth_gen.php";
+              window.location.href = env.VICI_ADMIN_URL;
             }}
             onMouseOver={(e) => handleMouseOver(e, "first")}
             onMouseLeave={(e) => handleMouseOut(e, "first")}
@@ -69,8 +69,7 @@ const DataNavigation = () => {
           onMouseOver={(e) => handleMouseOver(e, "second")}
           onMouseLeave={(e) => handleMouseOut(e, "second")}
           onClick={() => {
-            window.location.href =
-              "https://vici-lp1.itsbuzzmarketing.com/vicidial/realtime_report.php?RR=4&DB=0&group=Press1";
+            window.location.href = `${env.VICI_REALTIME_REPORT_URL}?RR=4&DB=0&group=Press1`;
           }}
           className={`flex items-center justify-center rounded-full border-2  border-[#D9D9D930] w-[318px] h-[318px] absolute left-2 -top-64 ${
             hoverStates.second ? "z-[6]" : "z-[3]"
@@ -99,8 +98,7 @@ const DataNavigation = () => {
           onMouseOver={(e) => handleMouseOver(e, "third")}
           onMouseLeave={(e) => handleMouseOut(e, "third")}
           onClick={() => {
-            window.location.href = window.location.href =
-              "https://vici-lp1.itsbuzzmarketing.com/vicidial/welcome.php";
+            window.location.href = env.VICI_WELCOME_URL;
           }}
           className="flex items-center justify-center rounded-full border-2 border-dashed border-[#D9D9D9] w-44 h-44 absolute -right-[185px] -top-10 "
         >
@@ -135,8 +133,7 @@ const DataNavigation = () => {
           onMouseOver={(e) => handleMouseOver(e, "fourth")}
           onMouseLeave={(e) => handleMouseOut(e, "fourth")}
           onClick={() => {
-            window.location.href =
-              "https://vici-lp1.itsbuzzmarketing.com/vicidial/admin.php";
+            window.location.href = env.VICI_ADMIN_PHP_URL;
           }}
           className={`flex items-center justify-center rounded-full border-2  border-[#D9D9D930] w-[318px] h-[318px] absolute -right-56 -bottom-40  ${
             hoverStates.fourth ? "z-[6]" : "z-[3]"
@@ -190,8 +187,7 @@ const DataNavigation = () => {
           onMouseOver={(e) => handleMouseOver(e, "sixth")}
           onMouseLeave={(e) => handleMouseOut(e, "sixth")}
           onClick={() => {
-            window.location.href =
-              "https://vici-lp1.itsbuzzmarketing.com/agc/vicidial.php";
+            window.location.href = env.VICI_CLASSIC_URL;
           }}
           className={`flex items-center justify-center rounded-full border-2  border-[#D9D9D930] w-[318px] h-[318px] absolute -left-56 -bottom-40 ${
             hoverStates.sixth ? "z-[6]" : "z-[3]"

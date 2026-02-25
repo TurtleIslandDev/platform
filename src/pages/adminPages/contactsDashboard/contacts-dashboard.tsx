@@ -23,8 +23,8 @@ interface Contact {
   [key: string]: string
 }
 
-// const BACKEND_URL = "http://0.0.0.0:3173"
-const BACKEND_URL = "https://app.itsbuzzmarketing.com"
+import { env } from "../../config/env"
+const BACKEND_URL = env.BACKEND_URL
 
 
 // fetch fields from the server

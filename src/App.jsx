@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { fetchWithAuth } from "./utils/fetchWithAuth";
+import { env } from "./config/env";
 import AdminRouteGuard from "./components/guards/AdminRouteGuard";
 import AgentSystemsTraining from "./pages/agentPages/AgentSystemsTraining";
 import InteractionGuidePage from "./pages/IG/InteractionGuidePage";
@@ -143,14 +144,14 @@ function App() {
   const dispatch = useDispatch();
   const { ipAddress, username, token } = useSelector((state) => state.user);
 
-  const AUTH_URL = "https://auth.itsbuzzmarketing.com";
+  const AUTH_URL = env.AUTH_URL;
   
   useEffect(() => {
 
     const updateIPAddress = async () => {
 
 
-      const response = await fetch("https://api.ipify.org?format=json");
+      const response = await fetch(env.IP_CHECK_API);
       const resData = await response.json();
       if (resData.ip) {
 
