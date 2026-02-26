@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { autoMapColumns } from "../../utils/columnMapper";
 import * as XLSX from "xlsx";
+import { isExcelFile } from "./uploadLeadFile";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
@@ -72,9 +73,9 @@ const UPLOAD_URL = "https://app.itsbuzzmarketing.com/testing"
 // const UPLOAD_URL = "http://127.0.0.1:3173";  // Local backend for testing
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
-const isExcelFile = (filename: string): boolean => {
-  return /\.xlsx?$/i.test(filename)
-}
+// const isExcelFile = (filename: string): boolean => {
+//   return /\.xlsx?$/i.test(filename)
+// }
 
 const UploadLeadFileQueue = () => {
   const navigate = useNavigate();

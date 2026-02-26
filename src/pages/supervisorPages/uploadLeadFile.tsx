@@ -63,12 +63,17 @@ const HOMEBOUND_EXTRA_COLUMNS = [
 
 // 
 // const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
-// const UPLOAD_URL = "http://127.0.0.1:3173";
+// const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
+const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
-const isExcelFile = (filename: string): boolean => {
-  return /\.xlsx?$/i.test(filename)
+export const isExcelFile = (filename: string): boolean => {
+  // return /\.xlsx?$/i.test(filename)
+  return (filename.endsWith(".xls") || filename.endsWith(".xlsx"))
+}
+
+export const isCsvFile = (filename: string): boolean => {
+  return filename.endsWith(".csv")
 }
 
 const UploadLeadFile = () => {

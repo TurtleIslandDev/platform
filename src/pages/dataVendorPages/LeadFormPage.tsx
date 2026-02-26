@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
 import { fetchWithAuth } from "../../utils/fetchWithAuth"
 import * as XLSX from "xlsx"
+import { isExcelFile, isCsvFile } from "../supervisorPages/uploadLeadFile"
 
 const DEFAULT_EMAILS = [
   "glenfiddich.apayart@itsbuzzmarketing.com", 
@@ -54,10 +55,32 @@ const LeadFormPage = () => {
   const { token } = useSelector((state: any) => state.user);
   const navigate = useNavigate();
 
+  const checkNameFields = (rows: string[][]) => {
+    // Check for name fields
+    const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
+    const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
+    const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
+    const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
+
+    if (!hasFirstName && !hasLastName && !hasFullName) {
+      if (campaignName === "TM_Debt") {
+        setValidationWarning(
+          "Warning: File may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
+        )
+      } else {
+        setValidationWarning("Warning: File may lack name fields.")
+      }
+    } else {
+      setValidationWarning("")
+    }
+  }
+
   const processFile = (file: File) => {
-    const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
-    const isCsv = file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")
+    const isXlsx = isExcelFile(file.name)
+    const isCsv = isCsvFile(file.name)
     
+    // could take this out since the accept attribute on the file upload will only
+    // allow the file types we specificy
     if (!isCsv && !isXlsx) {
       alert("Please upload a valid file")
       return
@@ -79,24 +102,7 @@ const LeadFormPage = () => {
           // Get first 5 rows for preview
           const rows = jsonData.slice(0, 5).map((row) => row.map((cell) => String(cell || '').trim()))
           setCsvPreview(rows)
-
-          // Check for name fields
-          const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
-          const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
-          const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
-          const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
-
-          if (!hasFirstName && !hasLastName && !hasFullName) {
-            if (campaignName === "TM_Debt") {
-              setValidationWarning(
-                "Warning: File may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
-              )
-            } else {
-              setValidationWarning("Warning: File may lack name fields.")
-            }
-          } else {
-            setValidationWarning("")
-          }
+          checkNameFields(rows)
         } catch (error) {
           console.error("Error parsing XLSX file:", error)
           alert("Failed to parse XLSX file. Please ensure it's a valid Excel file.")
@@ -113,24 +119,7 @@ const LeadFormPage = () => {
           .slice(0, 5)
           .map((row) => row.split(","))
         setCsvPreview(rows)
-
-        // Check for name fields
-        const headers = rows[0]?.map((h) => h.toLowerCase().trim()) || []
-        const hasFirstName = headers.some((h) => h.includes("first") && h.includes("name"))
-        const hasLastName = headers.some((h) => h.includes("last") && h.includes("name"))
-        const hasFullName = headers.some((h) => h.includes("full") && h.includes("name"))
-
-        if (!hasFirstName && !hasLastName && !hasFullName) {
-          if (campaignName === "TM_Debt") {
-            setValidationWarning(
-              "Warning: File may lack name fields. For TM_Debt campaigns, this file will not be sent unless ForthCRM is checked or name columns are confirmed.",
-            )
-          } else {
-            setValidationWarning("Warning: File may lack name fields.")
-          }
-        } else {
-          setValidationWarning("")
-        }
+        checkNameFields(rows)
       }
       reader.readAsText(file)
     }
@@ -376,7 +365,7 @@ const LeadFormPage = () => {
                 <input
                   id="csv-file"
                   type="file"
-                  accept=".csv,.xlsx"
+                  accept=".csv,.xlsx,.xls"
                   onChange={handleFileUpload}
                   className="hidden"
                   

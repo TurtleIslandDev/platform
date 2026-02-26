@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom"
 import Navbar from "../../components/navigationBar/navbar"
 import { fetchWithAuth } from "../../utils/fetchWithAuth"
 import * as XLSX from "xlsx"
+import { isExcelFile } from "../supervisorPages/uploadLeadFile"
 
 
 const DEFAULT_EMAILS = [
@@ -46,7 +47,7 @@ const ExternalVendorForm = () => {
   const navigate = useNavigate();
 
   const processFile = (file: File) => {
-    const isXlsx = file.name.toLowerCase().endsWith('.xlsx')
+    const isXlsx = isExcelFile(file.name)
     
     if (isXlsx) {
       const reader = new FileReader()
@@ -58,7 +59,7 @@ const ExternalVendorForm = () => {
           setFile(file)
         } catch (error) {
           console.error("Error parsing XLSX file:", error)
-          alert("Failed to parse XLSX file. Please ensure it's a valid Excel file.")
+          alert("Failed to parse file. Please ensure it's a valid Excel/CSV file.")
         }
       }
       reader.readAsArrayBuffer(file)
