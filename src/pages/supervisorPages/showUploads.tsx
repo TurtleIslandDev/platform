@@ -34,8 +34,8 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { fetchWithAuth } from "../../utils/fetchWithAuth";
 
-// const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
-const UPLOAD_URL = "http://127.0.0.1:3173";
+const UPLOAD_URL = "https://app.itsbuzzmarketing.com";
+// const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "http://54.167.53.149"
 
 
