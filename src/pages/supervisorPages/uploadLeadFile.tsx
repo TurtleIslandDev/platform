@@ -62,8 +62,8 @@ const HOMEBOUND_EXTRA_COLUMNS = [
 
 // 
 // const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
-const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
-// const UPLOAD_URL = "http://127.0.0.1:3173";
+// const UPLOAD_URL = "https://app.itsbuzzmarketing.com"
+const UPLOAD_URL = "http://127.0.0.1:3173";
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
 
 const UploadLeadFile = () => {
@@ -108,6 +108,7 @@ const UploadLeadFile = () => {
   const [uploadFileName, setUploadFileName] = useState<string>("")
   const [isDragging, setIsDragging] = useState(false)
   const [enableDuplicateCheck, setEnableDuplicateCheck] = useState(false)
+  const [skipLitigatorCheck, setSkipLitigatorCheck] = useState(false)
   const [duplicateCheckScope, setDuplicateCheckScope] = useState<'system' | 'list'>('system')
   
   // Get active columns based on selected campaign
@@ -458,6 +459,10 @@ const UploadLeadFile = () => {
       if (skipDncCheck) {
         formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
       }
+
+      // if skip litigator check is true, then don't check litigator list
+      // otherwise, check litigator list      
+      formData.append("check_litigator_list", JSON.stringify(!skipLitigatorCheck));
 
       formData.append("download_file", JSON.stringify(true));
 
@@ -925,7 +930,7 @@ const UploadLeadFile = () => {
                   checked={skipDncCheck}
                   onCheckedChange={(checked) => setSkipDncCheck(checked as boolean)}
                 />
-                <Label htmlFor="skip-dnc-check">Skip DNC Check</Label>
+                <Label htmlFor="skip-dnc-check">Skip System DNC Check</Label>
               </div>
 
               <div className="flex items-center space-x-2" >
@@ -936,6 +941,15 @@ const UploadLeadFile = () => {
                   onCheckedChange={(checked) => setDownloadFile(checked as boolean)}
                 />
                 <Label htmlFor="download-file">Download File</Label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="skip-litigator-list"
+                  checked={skipLitigatorCheck}
+                  onCheckedChange={(checked) => setSkipLitigatorCheck(checked as boolean)}
+                />
+                <Label htmlFor="skip-litigator-list">Skip Litigator List Check</Label>
               </div>
 
               {/* Duplicate Check Options */}

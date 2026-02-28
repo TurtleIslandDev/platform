@@ -120,7 +120,7 @@ const mockUploadData = [
 ];
 
 // Upload Details Modal Component
-const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: boolean; onClose: () => void }) => {
+const UploadDetailsModal = ({ upload, isOpen, onClose, showTestMode }: { upload: any; isOpen: boolean; onClose: () => void; showTestMode: boolean }) => {
   const downloadFile = (filename: string, category: string) => {
     if (!filename) return;
     
@@ -190,7 +190,10 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                 <Label className="text-sm font-medium text-muted-foreground">List ID</Label>
                 <p className="font-medium">{data.list_id || "N/A"}</p>
               </div>
-              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Litigator Check</Label>
+                <p className="font-medium">{data.check_litigator_list ? "Yes" : "No"}</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -250,6 +253,18 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                         <p className="text-xl font-bold text-gray-600">{data.invalid_count || 0}</p>
                       </div>
                     )}
+                    {data.litigator_count != null && (
+                      <div className="text-center p-3 bg-teal-50 rounded-lg border border-teal-200">
+                        <p className="text-xs text-muted-foreground">Litigator</p>
+                        <p className="text-xl font-bold text-teal-600">{data.litigator_count || 0}</p>
+                      </div>
+                    )}
+                    { showTestMode && data.internal_scrubbing_count != null && (
+                      <div className="text-center p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <p className="text-xs text-muted-foreground">Internal Scrubbing</p>
+                        <p className="text-xl font-bold text-indigo-600">{data.internal_scrubbing_count || 0}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -278,8 +293,15 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                       )}
                       {data.count_after_checking_for_dnc_numbers !== undefined && (
                         <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <span className="text-sm">After DNC Check</span>
+                          <span className="text-sm">After System DNC Check</span>
                           <span className="font-medium">{data.count_after_checking_for_dnc_numbers}</span>
+                        </div>
+                      )}
+
+                      {(showTestMode && data.count_after_internal_scrubbing !== undefined) && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After Internal Scrubbing</span>
+                          <span className="font-medium">{data.count_after_internal_scrubbing}</span>
                         </div>
                       )}
                       {data.count_after_black_list_dnc !== undefined && (
@@ -288,6 +310,15 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                           <span className="font-medium">{data.count_after_black_list_dnc}</span>
                         </div>
                       )}
+
+                      {data.count_after_checking_for_litigator_list != null && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After Litigator Check</span>
+                          <span className="font-medium">{data.count_after_checking_for_litigator_list}</span>
+                        </div>
+                      )}
+
+                      
                     </div>
                   </div>
                 )}
@@ -463,6 +494,46 @@ const UploadDetailsModal = ({ upload, isOpen, onClose }: { upload: any; isOpen: 
                     <Button
                       size="sm"
                       onClick={() => downloadFile(data.duplicates_filename, "duplicates")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
+                {data.litigator_list_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg border-teal-200 bg-teal-50">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-teal-600" />
+                      <div>
+                        <p className="font-medium">Litigator List</p>
+                        <p className="text-sm text-muted-foreground">Numbers on litigator list</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.litigator_list_filename, "litigator_list")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
+                { showTestMode && data.internal_scrubbing_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg border-indigo-200 bg-indigo-50">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-indigo-600" />
+                      <div>
+                        <p className="font-medium">Internal Scrubbing</p>
+                        <p className="text-sm text-muted-foreground">Records removed by internal scrubbing (test mode only)</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.internal_scrubbing_filename, "internal_scrubbing")}
                       className="flex items-center gap-1"
                     >
                       <Download className="h-3 w-3" />
@@ -762,7 +833,7 @@ const ShowUploads = () => {
             >
               <FileCheck className="h-4 w-4" />
               View Jobs
-            </Button>
+            </Button> 
             <Button 
               onClick={() => navigate("/qc-and-supervisor-navigation/upload-lead-file")}
               variant="outline"
@@ -1274,6 +1345,7 @@ const ShowUploads = () => {
         upload={selectedUpload} 
         isOpen={isModalOpen} 
         onClose={handleModalClose} 
+        showTestMode={showTestMode}
       />
     </div>
   );
