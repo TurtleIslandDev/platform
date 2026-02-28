@@ -15,10 +15,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/navigationBar/navbar";
 import { autoMapColumns } from "../../utils/columnMapper";
+import * as XLSX from "xlsx";
+import { isExcelFile } from "./uploadLeadFile";
 
 // Predefined column mappings with required fields 
 // Received from @Jessie 20/06/2025, could be automated
-const PREDEFINED_COLUMNS = [
+const BASE_COLUMNS = [
   { id: "address1", label: "Address1", required: false },
   { id: "address2", label: "Address2", required: false },
   { id: "address3", label: "Address3", required: false },
@@ -49,11 +51,31 @@ const PREDEFINED_COLUMNS = [
   // { id: "record_status", label: "Record Status", required: false },
 ]
 
+// Extra fields used only for Homebound campaign
+const HOMEBOUND_EXTRA_COLUMNS = [
+  { id: "mortgage_balance", label: "Mortgage Balance", required: false },
+  { id: "ltv", label: "LTV", required: false },
+  { id: "credit_grade", label: "Credit Grade", required: false },
+  { id: "interest_rate", label: "Interest Rate", required: false },
+  { id: "fico_score", label: "Fico Score", required: false },
+  { id: "ssn", label: "SSN", required: false },
+  // { id: "vendor_lead_cod", label: "Vendor Lead Code", required: false },
+  // { id: "rank", label: "Rank", required: false },
+  // { id: "owner", label: "Owner", required: false },
+  // { id: "call_type", label: "Call Type", required: false },
+  // { id: "inbound_group", label: "Inbound Group", required: false },
+  // { id: "record_status", label: "Record Status", required: false },
+]
+
 // 
 // const UPLOAD_URL = "https://endpoint.itsbuzzmarketing.com";
 const UPLOAD_URL = "https://app.itsbuzzmarketing.com/testing" 
 // const UPLOAD_URL = "http://127.0.0.1:3173";  // Local backend for testing
 // const UPLOAD_URL = "https://combined-service.r9tsjnbaapfz8.us-east-1.cs.amazonlightsail.com/"
+
+// const isExcelFile = (filename: string): boolean => {
+//   return /\.xlsx?$/i.test(filename)
+// }
 
 const UploadLeadFileQueue = () => {
   const navigate = useNavigate();
@@ -98,21 +120,31 @@ const UploadLeadFileQueue = () => {
   const [isDragging, setIsDragging] = useState(false)
   const [enableDuplicateCheck, setEnableDuplicateCheck] = useState(false)
   const [duplicateCheckScope, setDuplicateCheckScope] = useState<'system' | 'list'>('system')
+  const [hasNoHeaders, setHasNoHeaders] = useState(false)
+  const [firstRowData, setFirstRowData] = useState<string[]>([])
   
+  // Get active columns based on selected campaign
+  const getCurrentColumns = () => {
+    if (campaignName === "Homebound") {
+      return [...BASE_COLUMNS, ...HOMEBOUND_EXTRA_COLUMNS]
+    }
+    return BASE_COLUMNS
+  }
+
   // Campaign confirmation modal state
   const [showCampaignConfirm, setShowCampaignConfirm] = useState(false)
   const [campaignConfirmText, setCampaignConfirmText] = useState("")
   const [campaignConfirmError, setCampaignConfirmError] = useState("")
 
   // Filter predefined columns based on search term
-  const filteredColumns = PREDEFINED_COLUMNS.filter(
+  const filteredColumns = getCurrentColumns().filter(
     (col) =>
       col.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
       col.id.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   // Handle CSV file upload and parsing
-  const parseCsvFile = useCallback((file: File) => {
+  const parseCsvFile = useCallback((file: File, hasNoHeaders: boolean) => {
     if (!file) return
     setCsvFile(file)
     const reader = new FileReader()
@@ -123,23 +155,40 @@ const UploadLeadFileQueue = () => {
       const lines = text.split("\n").filter((line) => line.trim())
 
       if (lines.length > 0) {
-        let headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
+        let headers: string[]
+        let data: string[][]
+        let firstRowValues: string[] = []
 
-        // for missing headers, add idx 
-        headers.forEach((header, idx) => {
-          if (!header) {
-            headers[idx] = `column${idx + 1}`
-          }
-        })
+        if (hasNoHeaders) {
+          // First row is data, generate column names
+          firstRowValues = lines[0].split(",").map((cell) => cell.trim().replace(/"/g, ""))
+          headers = firstRowValues.map((_, idx) => `column${idx + 1}`)
+          data = lines.map((line) => line.split(",").map((cell) => cell.trim().replace(/"/g, "")))
+        } else {
+          // First row is headers
+          headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""))
 
-        const data = lines.slice(1).map((line) => line.split(",").map((cell) => cell.trim().replace(/"/g, "")))
+          // for missing headers, add idx 
+          headers.forEach((header, idx) => {
+            if (!header) {
+              headers[idx] = `column${idx + 1}`
+            }
+          })
+
+          data = lines.slice(1).map((line) => line.split(",").map((cell) => cell.trim().replace(/"/g, "")))
+        }
 
         setCsvHeaders(headers)
         setCsvData(data)
+        setFirstRowData(firstRowValues)
         
-        // Auto-map columns
-        const autoMappings = autoMapColumns(headers, PREDEFINED_COLUMNS)
-        setFieldMappings(autoMappings) // Pre-fill with suggestions
+        // Auto-map columns only if headers exist
+        if (!hasNoHeaders) {
+          const autoMappings = autoMapColumns(headers, getCurrentColumns())
+          setFieldMappings(autoMappings) // Pre-fill with suggestions
+        } else {
+          setFieldMappings({}) // Clear mappings for no-headers mode
+        }
         
         setErrors([])
       }
@@ -148,11 +197,82 @@ const UploadLeadFileQueue = () => {
     reader.readAsText(file)
   }, [])
 
+  // Handle XLSX file upload and parsing
+  const parseXlsxFile = useCallback((file: File, hasNoHeaders: boolean) => {
+    if (!file) return
+    setCsvFile(file)
+    setUploadFileName(file.name)
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer)
+        const workbook = XLSX.read(data, { type: 'array' })
+        
+        // Get first sheet
+        const firstSheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[firstSheetName]
+        
+        // Convert to JSON array
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' }) as string[][]
+        
+        if (jsonData.length > 0) {
+          let headers: string[]
+          let data: string[][]
+          let firstRowValues: string[] = []
+
+          if (hasNoHeaders) {
+            // First row is data, generate column names
+            firstRowValues = jsonData[0].map((cell) => String(cell || '').trim())
+            headers = firstRowValues.map((_, idx) => `column${idx + 1}`)
+            data = jsonData.map((row) => row.map((cell) => String(cell || '').trim()))
+          } else {
+            // First row is headers
+            headers = jsonData[0].map((h) => String(h || '').trim())
+
+            // for missing headers, add idx 
+            headers.forEach((header, idx) => {
+              if (!header) {
+                headers[idx] = `column${idx + 1}`
+              }
+            })
+
+            data = jsonData.slice(1).map((row) => row.map((cell) => String(cell || '').trim()))
+          }
+
+          setCsvHeaders(headers)
+          setCsvData(data)
+          setFirstRowData(firstRowValues)
+          
+          // Auto-map columns only if headers exist
+          if (!hasNoHeaders) {
+            const autoMappings = autoMapColumns(headers, getCurrentColumns())
+            setFieldMappings(autoMappings) // Pre-fill with suggestions
+          } else {
+            setFieldMappings({}) // Clear mappings for no-headers mode
+          }
+          
+          setErrors([])
+        }
+      } catch (error) {
+        console.error("Error parsing XLSX file:", error)
+        setErrors(["Failed to parse XLSX file. Please ensure it's a valid Excel file."])
+      }
+    }
+
+    reader.readAsArrayBuffer(file)
+  }, [])
+
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
-    parseCsvFile(file)
-  }, [parseCsvFile])
+    
+    if (isExcelFile(file.name)) {
+      parseXlsxFile(file, hasNoHeaders)
+    } else {
+      parseCsvFile(file, hasNoHeaders)
+    }
+  }, [parseCsvFile, parseXlsxFile, hasNoHeaders])
 
   // Handle field mapping with one-to-one constraint
   const handleFieldMapping = (csvField: string, predefinedField: string) => {
@@ -187,7 +307,7 @@ const UploadLeadFileQueue = () => {
 
   // Validate required fields
   const validateMappings = () => {
-    const requiredFields = PREDEFINED_COLUMNS.filter((col) => col.required)
+    const requiredFields = getCurrentColumns().filter((col) => col.required)
     const mappedFields = Object.values(fieldMappings)
     const missingRequired = requiredFields.filter((field) => !mappedFields.includes(field.id))
 
@@ -198,7 +318,7 @@ const UploadLeadFileQueue = () => {
 
     if (!listId && !downloadFile) newErrors.push("Please select a List ID")
     
-    if (!csvFile) newErrors.push("Please upload a CSV file")
+    if (!csvFile) newErrors.push("Please upload a file")
 
     // Validate campaign name is required when duplicate check is enabled
     if (enableDuplicateCheck && !campaignName) {
@@ -237,6 +357,7 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
@@ -288,6 +409,7 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
       if (skipScrubbing) {
         formData.append("skip_scrubbing", JSON.stringify(skipScrubbing));
       }
@@ -603,8 +725,9 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("upload_file_name", uploadFileName || csvFile?.name || `upload_${new Date().toISOString()}.csv`);
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
-      if (enableDuplicateCheck) {        
+      if (enableDuplicateCheck) {
         formData.append("duplicate_check_scope", duplicateCheckScope);
       }
 
@@ -615,7 +738,7 @@ const UploadLeadFileQueue = () => {
           formData.append("skip_system_dnc", JSON.stringify(skipDncCheck));
         }
       }
-      
+
       // Note: download_file is always false for queue-based processing
       // The processed file will be available for download on the progress page
       formData.append("download_file", JSON.stringify(false));
@@ -697,8 +820,9 @@ const UploadLeadFileQueue = () => {
       formData.append("source_id", sourceId || "");
       formData.append("campaign_name", campaignName || "");
       formData.append("vendor_lead_code", vendorLeadCode || "");
+      formData.append("has_no_headers", JSON.stringify(hasNoHeaders));
 
-      if (enableDuplicateCheck) {        
+      if (enableDuplicateCheck) {
         formData.append("duplicate_check_scope", duplicateCheckScope);
       }
 
@@ -885,14 +1009,14 @@ const UploadLeadFileQueue = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Upload className="h-5 w-5" />
-                Upload CSV File
+                Upload File
               </CardTitle>
-              <CardDescription>Select your CSV file to begin the mapping process</CardDescription>
+              <CardDescription>Select your file to begin the mapping process</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="csv-file" className="mb-2 block">CSV File</Label>
+                  <Label htmlFor="csv-file" className="mb-2 block">File</Label>
                   <div
                     className={`border-2 border-dashed rounded-md p-4 transition-colors ${isDragging ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
                     onDragEnter={(e) => { e.preventDefault(); setIsDragging(true) }}
@@ -902,14 +1026,41 @@ const UploadLeadFileQueue = () => {
                       e.preventDefault()
                       setIsDragging(false)
                       const file = e.dataTransfer.files?.[0]
-                      if (file) parseCsvFile(file)
+                      if (file) {
+                        if (isExcelFile(file.name)) {
+                          parseXlsxFile(file, hasNoHeaders)
+                        } else {
+                          parseCsvFile(file, hasNoHeaders)
+                        }
+                      }
                     }}
                   >
-                    <Input id="csv-file" type="file" accept=".csv" onChange={handleFileUpload} className="pt-0 hidden" />
+                    <Input id="csv-file" type="file" accept=".csv,.xlsx,.xls" onChange={handleFileUpload} className="pt-0 hidden" />
                     <label htmlFor="csv-file" className="cursor-pointer text-sm text-gray-600">
-                      {csvFile ? `Selected: ${csvFile.name}` : "Click or drag & drop CSV file here"}
+                      {csvFile ? `Selected: ${csvFile.name}` : "Click or drag & drop file here"}
                     </label>
                   </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="no-headers"
+                    checked={hasNoHeaders}
+                    onCheckedChange={(checked) => {
+                      setHasNoHeaders(checked as boolean)
+                      // Re-parse file if already loaded
+                      if (csvFile) {
+                        if (isExcelFile(csvFile.name)) {
+                          parseXlsxFile(csvFile, checked as boolean)
+                        } else {
+                          parseCsvFile(csvFile, checked as boolean)
+                        }
+                      }
+                    }}
+                  />
+                  <Label htmlFor="no-headers" className="text-sm font-normal cursor-pointer">
+                    File has no column headers
+                  </Label>
                 </div>
 
                 {csvFile && (
@@ -1080,19 +1231,19 @@ const UploadLeadFileQueue = () => {
             </Button>
           ) : (
             <Button onClick={() => handleSubmitQueue()} disabled={isUploading || csvHeaders.length === 0} className="w-full bg-blue-500 text-white" size="lg">
-              {isUploading ? "Uploading..." : "Upload & Process CSV"}
+              {isUploading ? "Uploading..." : "Upload & Process"}
             </Button>
           )}
 
           {/* Mapping Summary */}
-          {csvHeaders.length > 0 && (
+          {csvHeaders.length > 0 && !hasNoHeaders && (
             <Card>
               <CardHeader>
                 <CardTitle>Mapping Summary</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {PREDEFINED_COLUMNS.map((predefinedField) => {
+                  {getCurrentColumns().map((predefinedField) => {
                     const mappedCsvField = Object.keys(fieldMappings).find(
                       (csvField) => fieldMappings[csvField] === predefinedField.id,
                     )
@@ -1123,102 +1274,172 @@ const UploadLeadFileQueue = () => {
         {/* Right Column - Field Mapping */}
         {csvHeaders.length > 0 && (
           <div className="space-y-6">
-            {/* Search */}
-            <Card className="animate-in fade-in slide-in-from-right-4 duration-500">
+            {/* Search - Only show when headers exist */}
+            {!hasNoHeaders && (
+              <Card className="animate-in fade-in slide-in-from-right-4 duration-500">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Search className="h-5 w-5" />
-                    Search CSV Columns
+                    Search Columns
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <Label htmlFor="search-csv" className="mb-2 block">Search CSV Columns</Label>
+                    <Label htmlFor="search-csv" className="mb-2 block">Search Columns</Label>
                     <Input
                       id="search-csv"
-                      placeholder="Search CSV columns..."
+                      placeholder="Search columns..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
                 </CardContent>
               </Card>
+            )}
 
               {/* Field Mapping */}
               <Card className="animate-in fade-in slide-in-from-right-4 duration-500 delay-100">
                 <CardHeader>
                   <CardTitle>Field Mapping</CardTitle>
                   <CardDescription>
-                    Map VICI fields to your CSV columns. Required fields are marked with *
+                    {hasNoHeaders 
+                      ? "Map each column to a VICI field. Required fields are marked with *"
+                      : "Map VICI fields to your file columns. Required fields are marked with *"
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {PREDEFINED_COLUMNS.map((predefinedField) => {
-                      // Find which CSV field is mapped to this predefined field
-                      const mappedCsvField = Object.keys(fieldMappings).find(
-                        (csvField) => fieldMappings[csvField] === predefinedField.id,
-                      )
-                    
+                  {hasNoHeaders ? (
+                    // Column-based mapping UI (no headers)
+                    <div className="space-y-4">
+                      {csvHeaders.map((header, idx) => {
+                        const mappedPredefinedField = fieldMappings[header]
+                        const exampleValue = firstRowData[idx] || ""
 
-                      // Filter CSV headers based on search term
-                      const filteredCsvHeaders = csvHeaders.filter((header) =>
-                        header.toLowerCase().includes(searchTerm.toLowerCase()),
-                      )
+                        return (
+                          <div key={header} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Label className="font-medium">{header}</Label>
+                                {exampleValue && (
+                                  <span className="text-sm text-muted-foreground">
+                                    (Example: {exampleValue.length > 30 ? `${exampleValue.substring(0, 30)}...` : exampleValue})
+                                  </span>
+                                )}
+                              </div>
+                              {mappedPredefinedField && (
+                                <Button variant="ghost" size="sm" onClick={() => removeFieldMapping(header)}>
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
 
-                      return (
-                        <div key={predefinedField.id} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <Label className="font-medium flex items-center gap-2">
-                              {predefinedField.label}
-                              {predefinedField.required && <span className="text-red-500">*</span>}
-                            </Label>
-                            {mappedCsvField && (
-                              <Button variant="ghost" size="sm" onClick={() => removeFieldMapping(mappedCsvField)}>
-                                <X className="h-4 w-4" />
-                              </Button>
+                            {mappedPredefinedField ? (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="flex items-center gap-1">
+                                  {getCurrentColumns().find(col => col.id === mappedPredefinedField)?.label || mappedPredefinedField}
+                                  {getCurrentColumns().find(col => col.id === mappedPredefinedField)?.required && (
+                                    <span className="text-red-500 ml-1">*</span>
+                                  )}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <Select
+                                value={mappedPredefinedField || ""}
+                                onValueChange={(value) => handleFieldMapping(header, value)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select predefined field..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {getCurrentColumns()
+                                    .filter(
+                                      (predefinedField) =>
+                                        // Show if not mapped, or if it's currently mapped to this column
+                                        !Object.values(fieldMappings).includes(predefinedField.id) ||
+                                        fieldMappings[header] === predefinedField.id,
+                                    )
+                                    .map((predefinedField) => (
+                                      <SelectItem key={predefinedField.id} value={predefinedField.id}>
+                                        {predefinedField.label}{predefinedField.required ? " *" : ""}
+                                      </SelectItem>
+                                    ))
+                                  }
+                                </SelectContent>
+                              </Select>
                             )}
                           </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    // Original predefined field-based mapping UI (with headers)
+                    <div className="space-y-4">
+                      {getCurrentColumns().map((predefinedField) => {
+                        // Find which CSV field is mapped to this predefined field
+                        const mappedCsvField = Object.keys(fieldMappings).find(
+                          (csvField) => fieldMappings[csvField] === predefinedField.id,
+                        )
+                      
 
-                          {mappedCsvField ? (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="flex items-center gap-1">
-                                {mappedCsvField}
-                              </Badge>
+                        // Filter CSV headers based on search term
+                        const filteredCsvHeaders = csvHeaders.filter((header) =>
+                          header.toLowerCase().includes(searchTerm.toLowerCase()),
+                        )
+
+                        return (
+                          <div key={predefinedField.id} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="font-medium flex items-center gap-2">
+                                {predefinedField.label}
+                                {predefinedField.required && <span className="text-red-500">*</span>}
+                              </Label>
+                              {mappedCsvField && (
+                                <Button variant="ghost" size="sm" onClick={() => removeFieldMapping(mappedCsvField)}>
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
                             </div>
-                          ) : (
-                            <Select
-                              value={mappedCsvField || ""}
-                              onValueChange={(value) => handleFieldMapping(value, predefinedField.id)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select CSV column..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {filteredCsvHeaders
-                                  .filter(
-                                    (header) =>
-                                      // Show if not mapped, or if it's currently mapped to this predefined field
-                                      !Object.keys(fieldMappings).includes(header) ||
-                                      fieldMappings[header] === predefinedField.id,
-                                  )
-                                  .map((header, idx) => {
-                                    // const mappedHeader = header && header.trim() !== "" ? header : `column${idx + 1}`;
-                                    const mappedHeader = header;
-                                    return (
-                                      <SelectItem key={mappedHeader} value={mappedHeader}>
-                                        {mappedHeader}
-                                      </SelectItem>
-                                    );
-                                  })
-                                }
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+
+                            {mappedCsvField ? (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="flex items-center gap-1">
+                                  {mappedCsvField}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <Select
+                                value={mappedCsvField || ""}
+                                onValueChange={(value) => handleFieldMapping(value, predefinedField.id)}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select column..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {filteredCsvHeaders
+                                    .filter(
+                                      (header) =>
+                                        // Show if not mapped, or if it's currently mapped to this predefined field
+                                        !Object.keys(fieldMappings).includes(header) ||
+                                        fieldMappings[header] === predefinedField.id,
+                                    )
+                                    .map((header, idx) => {
+                                      const mappedHeader = header;
+                                      return (
+                                        <SelectItem key={mappedHeader} value={mappedHeader}>
+                                          {mappedHeader}
+                                        </SelectItem>
+                                      );
+                                    })
+                                  }
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
           </div>
