@@ -190,7 +190,10 @@ const UploadDetailsModal = ({ upload, isOpen, onClose, showTestMode }: { upload:
                 <Label className="text-sm font-medium text-muted-foreground">List ID</Label>
                 <p className="font-medium">{data.list_id || "N/A"}</p>
               </div>
-              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Litigator Check</Label>
+                <p className="font-medium">{data.check_litigator_list ? "Yes" : "No"}</p>
+              </div>
             </CardContent>
           </Card>
 
@@ -250,6 +253,12 @@ const UploadDetailsModal = ({ upload, isOpen, onClose, showTestMode }: { upload:
                         <p className="text-xl font-bold text-gray-600">{data.invalid_count || 0}</p>
                       </div>
                     )}
+                    {data.litigator_count != null && (
+                      <div className="text-center p-3 bg-teal-50 rounded-lg border border-teal-200">
+                        <p className="text-xs text-muted-foreground">Litigator</p>
+                        <p className="text-xl font-bold text-teal-600">{data.litigator_count || 0}</p>
+                      </div>
+                    )}
                     { showTestMode && data.internal_scrubbing_count != null && (
                       <div className="text-center p-3 bg-indigo-50 rounded-lg border border-indigo-200">
                         <p className="text-xs text-muted-foreground">Internal Scrubbing</p>
@@ -299,6 +308,13 @@ const UploadDetailsModal = ({ upload, isOpen, onClose, showTestMode }: { upload:
                         <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
                           <span className="text-sm">After Blacklist DNC</span>
                           <span className="font-medium">{data.count_after_black_list_dnc}</span>
+                        </div>
+                      )}
+
+                      {data.count_after_checking_for_litigator_list != null && (
+                        <div className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-sm">After Litigator Check</span>
+                          <span className="font-medium">{data.count_after_checking_for_litigator_list}</span>
                         </div>
                       )}
 
@@ -486,6 +502,26 @@ const UploadDetailsModal = ({ upload, isOpen, onClose, showTestMode }: { upload:
                   </div>
                 )}
 
+                {data.litigator_list_filename && (
+                  <div className="flex items-center justify-between p-3 border rounded-lg border-teal-200 bg-teal-50">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-teal-600" />
+                      <div>
+                        <p className="font-medium">Litigator List</p>
+                        <p className="text-sm text-muted-foreground">Numbers on litigator list</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(data.litigator_list_filename, "litigator_list")}
+                      className="flex items-center gap-1"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+
                 { showTestMode && data.internal_scrubbing_filename && (
                   <div className="flex items-center justify-between p-3 border rounded-lg border-indigo-200 bg-indigo-50">
                     <div className="flex items-center gap-2">
@@ -531,7 +567,7 @@ const ShowUploads = () => {
   const [endDate, setEndDate] = useState<string>("");
   const [sortByOldest, setSortByOldest] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showTestMode, setShowTestMode] = useState(true);   
+  const [showTestMode, setShowTestMode] = useState(false);   
   const [viewMode, setViewMode] = useState<"table" | "breakdown">("table");
   const [selectedUpload, setSelectedUpload] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
